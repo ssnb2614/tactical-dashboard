@@ -136,99 +136,45 @@
         };
 
         try {
-        const responses = await Promise.all([
-            fetch(urls.characters).then(res => res.text()),
-            fetch(urls.weapons).then(res => res.text()),
-            fetch(urls.gear).then(res => res.text()),
-            fetch(urls.skills).then(res => res.text())
-        ]);
-        
-        const [charCsv, weaponCsv, gearCsv, skillCsv] = responses;
+            const responses = await Promise.all([
+                fetch(urls.characters).then(res => res.text()), fetch(urls.weapons).then(res => res.text()),
+                fetch(urls.gear).then(res => res.text()), fetch(urls.skills).then(res => res.text())
+            ]);
+            const [charCsv, weaponCsv, gearCsv, skillCsv] = responses;
 
-        // --- Characters ---
-        try {
-            console.log("正在解析 Characters.csv...");
+            // Simple Parsing Logic
             characterTemplateDB = {};
-            const charRows = charCsv.split('\n').slice(1);
-            charRows.forEach((row, index) => {
-                if (!row.trim()) return;
-                const cols = row.trim().split(',');
-                // 修正：欄位總數應為 7
-                if (cols.length < 7) throw new Error(`第 ${index + 2} 行欄位數不足 (應為7，實際為${cols.length})`);
-                const t = { 
-                    id: cols[0], name: cols[1], title: cols[2], 
-                    stats: { mobility: parseInt(cols[3]), strength: parseInt(cols[4]) }, 
-                    primary_proficiency: cols[5], 
-                    // 修正：正確的欄位索引應為 6
-                    secondary_proficiency: cols[6].trim() 
-                };
+            charCsv.split('\n').slice(1).forEach(row => {
+                if (!row.trim()) return; const cols = row.trim().split(','); if (cols.length < 7) return;
+                const t = { id: cols[0], name: cols[1], title: cols[2], stats: { mobility: parseInt(cols[3]), strength: parseInt(cols[4]) }, primary_proficiency: cols[5], secondary_proficiency: cols[6] };
                 characterTemplateDB[t.name] = t;
             });
-            console.log("✅ Characters 解析成功!");
-        } catch (error) {
-            throw new Error(`解析檔案 [characters.csv] 時發生錯誤: ${error.message}`);
-        }
-
-        // --- Weapons ---
-        try {
-            console.log("正在解析 Weapons.csv...");
             WEAPON_DB = {};
-            const weaponRows = weaponCsv.split('\n').slice(1);
-            weaponRows.forEach((row, index) => {
-                if (!row.trim()) return;
-                const cols = row.trim().split(',');
-                if (cols.length < 9) throw new Error(`第 ${index + 2} 行欄位數不足 (應至少9欄)`);
+            weaponCsv.split('\n').slice(1).forEach(row => {
+                if (!row.trim()) return; const cols = row.trim().split(','); if (cols.length < 9) return;
                 const effectsString = cols[9] ? cols[9].trim() : '[]';
                 WEAPON_DB[cols[0]] = { name: cols[1], weight: parseInt(cols[2]), type: cols[3], ammo_type: cols[4], base_damage: parseInt(cols[5]), accuracy_short: parseInt(cols[6]), accuracy_mid: parseInt(cols[7]), accuracy_long: parseInt(cols[8]), effects: JSON.parse(effectsString) };
             });
-            console.log('✅ Weapons 解析成功!');
-        } catch (error) {
-            throw new Error(`解析檔案 [weapons.csv] 時發生錯誤: ${error.message}`);
-        }
-
-        // --- Gear ---
-        try {
-            console.log("正在解析 Gear.csv...");
             GEAR_DB = {};
-            const gearRows = gearCsv.split('\n').slice(1);
-            gearRows.forEach((row, index) => {
-                if (!row.trim()) return;
-                const cols = row.trim().split(',');
-                if (cols.length < 10) throw new Error(`第 ${index + 2} 行欄位數不足 (應至少10欄)`);
+            gearCsv.split('\n').slice(1).forEach(row => {
+                if (!row.trim()) return; const cols = row.trim().split(','); if (cols.length < 10) return;
                 const effectsString = cols[10] ? cols[10].trim() : '[]';
                 GEAR_DB[cols[0]] = { name: cols[1], weight: parseInt(cols[2]), gear_type: cols[3], mobility_penalty: parseInt(cols[4]), coverage_front: parseInt(cols[5]), coverage_side: parseInt(cols[6]), coverage_rear: parseInt(cols[7]), durability: parseInt(cols[8]), armor_level: cols[9], effects: JSON.parse(effectsString) };
             });
-            console.log('✅ Gear 解析成功!');
-        } catch (error) {
-            throw new Error(`解析檔案 [gear.csv] 時發生錯誤: ${error.message}`);
-        }
-        
-        // --- Skills ---
-        try {
-            console.log("正在解析 Skills.csv...");
             SKILL_DB = {};
-            const skillRows = skillCsv.split('\n').slice(1);
-            skillRows.forEach((row, index) => {
-                if (!row.trim()) return;
-                const cols = row.trim().split(',');
-                if (cols.length < 3) throw new Error(`第 ${index + 2} 行欄位數不足 (應至少3欄)`);
+            skillCsv.split('\n').slice(1).forEach(row => {
+                if (!row.trim()) return; const cols = row.trim().split(','); if (cols.length < 3) return;
                 const effectsString = cols[3] ? cols[3].trim() : '[]';
                 SKILL_DB[cols[0]] = { name: cols[1], type: cols[2], effects: JSON.parse(effectsString) };
             });
-            console.log('✅ Skills 解析成功!');
+
+            console.log('所有遊戲資料已成功載入！');
+            loadingOverlay.style.display = 'none';
         } catch (error) {
-            throw new Error(`解析檔案 [skills.csv] 時發生錯誤: ${error.message}`);
+            console.error('載入或解析遊戲資料時發生錯誤:', error);
+            loadingOverlay.textContent = `載入失敗！請按F12檢查主控台錯誤訊息。`;
         }
-
-        console.log('--- 所有遊戲資料已成功解析！ ---');
-        loadingOverlay.style.display = 'none';
-        renderAll();
-
-    } catch (error) {
-        console.error('載入或解析遊戲資料時發生嚴重錯誤:', error);
-        loadingOverlay.textContent = `載入失敗！錯誤訊息: ${error.message}`;
     }
-}
 
     function saveData() { localStorage.setItem('tacticalDashboardData_v4.0', JSON.stringify(gameState.characters)); }
     function loadData() {
@@ -446,6 +392,7 @@
 </body>
 
 </html>
+
 
 
 
