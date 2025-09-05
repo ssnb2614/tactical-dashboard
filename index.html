@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>戰術儀表板 v4.0</title>
+    <title>戰術儀表板 v4.1 (穩定版)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700&display=swap');
-        
         :root {
             --blue-team: #0984e3; --red-team: #d63031; --bg-dark: #2d3436;
             --panel-bg: #485460; --card-bg: #353b48; --text-light: #dfe6e9; 
             --text-secondary: #b2bec3; --hp-full-color: #2ecc71; --hp-mid-color: #f1c40f; 
             --hp-low-color: #e74c3c; --hp-bg: #273c75; --font-mono: 'Roboto Mono', monospace;
             --card-border-color: #3f4a59; --card-header-bg: #2a333f; --card-section-bg: #21252d;
-        }
-        
+        }        
         body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-color: var(--bg-dark); color: var(--text-light); margin: 0; padding: 15px; }
         .dashboard { display: flex; justify-content: space-between; gap: 15px; width: 100%; height: calc(100vh - 30px); }
         .panel { background-color: var(--panel-bg); border-radius: 8px; padding: 15px; overflow-y: auto; }
@@ -35,8 +33,6 @@
         .active-character-panel .placeholder { text-align: center; margin-top: 40%; color: var(--text-secondary); }
         .card-layout { background: var(--card-bg); border-radius: 8px; padding: 20px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; border: 2px solid var(--card-border-color); }
         .card-header { display: flex; align-items: center; padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid var(--card-border-color); background-color: var(--card-header-bg); padding: 10px 15px; margin: -20px -20px 15px -20px; border-top-left-radius: 6px; border-top-right-radius: 6px; }
-        .card-header .rank-icon { margin-right: 10px; width: 30px; height: 30px; object-fit: contain; }
-        .card-header .faction-star { margin-left: auto; width: 30px; height: 30px; object-fit: contain; }
         .card-avatar { width: 100px; height: 100px; border-radius: 8px; object-fit: cover; margin-right: 15px; }
         .card-name-title { flex-grow: 1; }
         .card-name-title input[type=text] { width: 100%; font-size: 1.8em; font-weight: bold; background: transparent; border: none; color: inherit; padding: 2px; }
@@ -86,29 +82,15 @@
     <div id="loading-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); color: white; display: flex; justify-content: center; align-items: center; z-index: 2000; font-size: 1.5em;">
         正在從 Google Sheets 載入遊戲規則...
     </div>
-
     <div class="dashboard">
-        <div class="panel roster-panel team-blue">
-            <div class="roster-header"><h3>藍方人員列表</h3><div><button class="add-char-btn" onclick="openAddCharModal('blue')">新增</button><button class="clear-data-btn" onclick="clearTeamData('blue')">清除藍方</button></div></div>
-            <div id="roster-blue"></div>
-        </div>
+        <div class="panel roster-panel team-blue"><div class="roster-header"><h3>藍方人員列表</h3><div><button class="add-char-btn" onclick="openAddCharModal('blue')">新增</button><button class="clear-data-btn" onclick="clearTeamData('blue')">清除藍方</button></div></div><div id="roster-blue"></div></div>
         <div class="panel active-character-panel team-blue" id="active-panel-blue"><div class="placeholder">請新增或選擇角色</div></div>
-        <div class="panel combat-panel" id="combat-panel">
-            <h2 class="combat-header">交戰模擬</h2>
-            <div class="combatants"><div class="combatant"><img id="combatant-avatar-blue" src="https://via.placeholder.com/80?text=?" class="combatant-avatar"><h3 id="combatant-name-blue">選擇藍方</h3></div><div> VS </div><div class="combatant"><img id="combatant-avatar-red" src="https://via.placeholder.com/80?text=?" class="combatant-avatar"><h3 id="combatant-name-red">選擇紅方</h3></div></div>
-            <div class="combat-options" style="margin-bottom: 20px;"><div class="form-group" style="margin-bottom:10px;"><label for="attack-angle">攻擊角度</label><select id="attack-angle" style="padding: 8px; width: 150px; margin:auto;"><option value="front">前方</option><option value="side">側面</option><option value="rear">後方</option></select></div></div>
-            <button id="battle-btn" onclick="simulateCombat()">開始戰鬥</button>
-            <div id="combat-log" style="margin-top: 20px; text-align: left; background: var(--bg-dark); padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;"><strong>戰鬥記錄:</strong></div>
-        </div>
+        <div class="panel combat-panel" id="combat-panel"><h2 class="combat-header">交戰模擬</h2><div class="combatants"><div class="combatant"><img id="combatant-avatar-blue" src="https://placehold.co/80x80?text=?" class="combatant-avatar"><h3 id="combatant-name-blue">選擇藍方</h3></div><div> VS </div><div class="combatant"><img id="combatant-avatar-red" src="https://placehold.co/80x80?text=?" class="combatant-avatar"><h3 id="combatant-name-red">選擇紅方</h3></div></div><div class="combat-options" style="margin-bottom: 20px;"><div class="form-group" style="margin-bottom:10px;"><label for="attack-angle">攻擊角度</label><select id="attack-angle" style="padding: 8px; width: 150px; margin:auto;"><option value="front">前方</option><option value="side">側面</option><option value="rear">後方</option></select></div></div><button id="battle-btn" onclick="simulateCombat()">開始戰鬥</button><div id="combat-log" style="margin-top: 20px; text-align: left; background: var(--bg-dark); padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;"><strong>戰鬥記錄:</strong></div></div>
         <div class="panel active-character-panel team-red" id="active-panel-red"><div class="placeholder">請新增或選擇角色</div></div>
-        <div class="panel roster-panel team-red">
-            <div class="roster-header"><h3>紅方人員列表</h3><div><button class="add-char-btn" onclick="openAddCharModal('red')">新增</button><button class="clear-data-btn" onclick="clearTeamData('red')">清除紅方</button></div></div>
-            <div id="roster-red"></div>
-        </div>
+        <div class="panel roster-panel team-red"><div class="roster-header"><h3>紅方人員列表</h3><div><button class="add-char-btn" onclick="openAddCharModal('red')">新增</button><button class="clear-data-btn" onclick="clearTeamData('red')">清除紅方</button></div></div><div id="roster-red"></div></div>
     </div>
-    
     <div id="addCharModal" class="modal">
-        <div class="modal-content"><form id="addCharForm"><h3 id="modalTitle">新增角色</h3><div class="form-group"><label for="charName">名稱 (可輸入範本名稱自動帶入)</label><input type="text" id="charName" placeholder="例如：王小明"></div><div class="form-group"><label for="charTitle">稱號</label><input type="text" id="charTitle" placeholder="例如：打醬油的路人"></div><div class="form-grid"><div class="form-group"><label for="charMobility">機動 (MOVE)</label><input type="number" id="charMobility" value="5"></div><div class="form-group"><label for="charStrength">肌力 (STR)</label><input type="number" id="charStrength" value="15"></div><div class="form-group"><label for="charPrimaryProf">主武器熟稔</label><select id="charPrimaryProf"><option value="S">S</option><option value="A">A</option><option value="B" selected>B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></div><div class="form-group"><label for="charSecondaryProf">副武器熟稔</label><select id="charSecondaryProf"><option value="S">S</option><option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option><option value="E">E</option></select></div></div><div class="modal-buttons"><button type="button" class="cancel" onclick="closeAddCharModal()">取消</button><button type="submit" class="save" id="saveCharBtn">儲存</button></div></form></div>
+        <div class="modal-content"><form id="addCharForm"><h3 id="modalTitle">新增角色</h3><div class="form-group"><label for="charName">名稱 (可輸入範本名稱自動帶入)</label><input type="text" id="charName" placeholder="例如：特種部隊"></div><div class="form-group"><label for="charTitle">稱號</label><input type="text" id="charTitle" placeholder="例如：菁英中的菁英"></div><div class="form-grid"><div class="form-group"><label for="charMobility">機動 (MOVE)</label><input type="number" id="charMobility" value="5"></div><div class="form-group"><label for="charStrength">肌力 (STR)</label><input type="number" id="charStrength" value="15"></div><div class="form-group"><label for="charPrimaryProf">主武器熟稔</label><select id="charPrimaryProf"><option value="S">S</option><option value="A">A</option><option value="B" selected>B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></div><div class="form-group"><label for="charSecondaryProf">副武器熟稔</label><select id="charSecondaryProf"><option value="S">S</option><option value="A">A</option><option value="B">B</option><option value="C" selected>C</option><option value="D">D</option><option value="E">E</option></select></div></div><div class="modal-buttons"><button type="button" class="cancel" onclick="closeAddCharModal()">取消</button><button type="submit" class="save" id="saveCharBtn">儲存</button></div></form></div>
     </div>
 
     <script>
@@ -119,8 +101,6 @@
     let characterTemplateDB = {};
 
     const PROFICIENCY_MODIFIERS = { 'S': 1.05, 'A': 1.0, 'B': 0.95, 'C': 0.9, 'D': 0.85, 'E': 0.8 };
-    const RANK_ICON = 'https://via.placeholder.com/30x30?text=R';
-    const FACTION_STAR = 'https://via.placeholder.com/30x30?text=★';
     
     // --- Application State ---
     let gameState = { characters: { blue: [], red: [] }, selectedChar: { blue: null, red: null }, combatants: { blue: null, red: null } };
@@ -130,11 +110,13 @@
         const loadingOverlay = document.getElementById('loading-overlay');
         loadingOverlay.textContent = '正在從 Google Sheets 載入遊戲規則...';
         loadingOverlay.style.display = 'flex';
+
+        const urls = {
             // !!! 請務必將下方四個網址替換為您自己的 Google Sheet CSV 發佈網址 !!!
-            characters: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTQyn3ID7LBfpRjYBuX1mLweeQ1sr7thV4WHMiG5AqiqURFJftxuJ2z_8XXNPL8yIt7avYq8xfmPv09/pub?gid=0&single=true&output=csv',
-            weapons: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUgRC-c-_jUmGAF6CJn3P057w0bc43uWBTnmPbEVUSSPa4GlWqudaM7HY3Oc_NIgI9L_mPEai3weRS/pub?gid=619091591&single=true&output=csv',
-            gear: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRhpFeTps4MlzO_sRZbABh_YhjmNngDRfYUjoyfJm7KqEemObopE9RQ_V30C8ZWgvclRBUuqcU5BVOI/pub?gid=2032212675&single=true&output=csv',
-            skills: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTW3fGuzaVQXHxPg32SG3qhUBmuL_uJTTEqx8HrcT7ZtQVmIN6623OR5bZPooGiizHOIEAEoBQQkHCl/pub?gid=1620707329&single=true&output=csv'
+            characters: '...YOUR_CHARACTERS_URL_HERE...',
+            weapons: '...YOUR_WEAPONS_URL_HERE...',
+            gear: '...YOUR_GEAR_URL_HERE...',
+            skills: '...YOUR_SKILLS_URL_HERE...'
         };
 
         try {
@@ -177,225 +159,35 @@
             loadingOverlay.textContent = `載入失敗！請按F12檢查主控台錯誤訊息。`;
         }
     }
-
-    function saveData() { localStorage.setItem('tacticalDashboardData_v4.0', JSON.stringify(gameState.characters)); }
+    
+    function saveData() { localStorage.setItem('tacticalDashboardData_v4.1', JSON.stringify(gameState.characters)); }
     function loadData() {
-        const data = localStorage.getItem('tacticalDashboardData_v4.0');
+        const data = localStorage.getItem('tacticalDashboardData_v4.1');
         if (data) gameState.characters = JSON.parse(data);
     }
-    
-    // The rest of the JavaScript functions (renderAll, renderRoster, addCharacter, simulateCombat, etc.)
-    // are the same as the final versions we have already perfected.
-    // To keep this block concise, they are not repeated here, but they are in the full code above.
-    // ... all other JavaScript functions go here ...
-    // NOTE FOR AI: Paste all the other helper functions from the last full JS block here.
     function clearTeamData(team) { const teamName = team === 'blue' ? '藍方' : '紅方'; if (confirm(`確定要清除所有${teamName}的角色資料嗎？此操作無法復原！`)) { gameState.characters[team] = []; gameState.selectedChar[team] = null; gameState.combatants[team] = null; saveData(); renderAll(); } }
     function renderAll() { ['blue', 'red'].forEach(team => { renderRoster(team); const selectedId = gameState.selectedChar[team]; if (selectedId && gameState.characters[team].some(c => c.id === selectedId)) { displayCharacterDetails(selectedId, team); } else if (gameState.characters[team].length > 0) { gameState.selectedChar[team] = gameState.characters[team][0].id; renderRoster(team); displayCharacterDetails(gameState.selectedChar[team], team); } else { document.getElementById(`active-panel-${team}`).innerHTML = `<div class="placeholder">請新增或選擇角色</div>`; } }); updateCombatPanel(); }
     function renderRoster(team) { const rosterContainer = document.getElementById(`roster-${team}`); rosterContainer.innerHTML = ''; gameState.characters[team].forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'roster-char'; if (gameState.selectedChar[team] === char.id) charDiv.classList.add('selected'); charDiv.onclick = () => { gameState.selectedChar[team] = char.id; renderAll(); }; const hpPercent = (char.currentHP / 100) * 100; let hpBarColor = `var(--hp-full-color)`; if (hpPercent < 50) hpBarColor = `var(--hp-mid-color)`; if (hpPercent < 25) hpBarColor = `var(--hp-low-color)`; charDiv.innerHTML = ` <div class="char-main-info"> <img src="${char.avatar}" class="roster-avatar"> <span>${char.name}</span> </div> <div class="hp-bar-container"><div class="hp-bar" style="width: ${hpPercent}%; background-color: ${hpBarColor};"></div></div> <button class="delete-char-btn" onclick="event.stopPropagation(); deleteCharacter('${char.id}', '${team}')">✕</button> `; rosterContainer.appendChild(charDiv); }); }
-    function addCharacter(team, event) {
-    event.preventDefault();
-    const newChar = {
-        id: 'char_' + Date.now(),
-        name: document.getElementById('charName').value || '王小明',
-        title: document.getElementById('charTitle').value || '砲灰',
-        maxHP: 100, currentHP: 100,
-        stats: {
-            mobility: parseInt(document.getElementById('charMobility').value) || 5,
-            strength: parseInt(document.getElementById('charStrength').value) || 15,
-        },
-        primary_proficiency: document.getElementById('charPrimaryProf').value,
-        secondary_proficiency: document.getElementById('charSecondaryProf').value,
-        avatar: 'https://via.placeholder.com/100?text=?', equipment: [], skills: []
-    };
-    gameState.characters[team].push(newChar);
-    gameState.selectedChar[team] = newChar.id;
-    closeAddCharModal(); saveData(); renderAll();
-}
+    function addCharacter(team, event) { event.preventDefault(); const newChar = { id: 'char_' + Date.now(), name: document.getElementById('charName').value || '新兵', title: document.getElementById('charTitle').value || '無名小卒', maxHP: 100, currentHP: 100, stats: { mobility: parseInt(document.getElementById('charMobility').value) || 5, strength: parseInt(document.getElementById('charStrength').value) || 15, }, primary_proficiency: document.getElementById('charPrimaryProf').value, secondary_proficiency: document.getElementById('charSecondaryProf').value, avatar: 'https://placehold.co/100x100?text=?', equipment: [], skills: [] }; gameState.characters[team].push(newChar); gameState.selectedChar[team] = newChar.id; closeAddCharModal(); saveData(); renderAll(); }
     function deleteCharacter(charId, team) { if (!confirm('確定要刪除此角色嗎？')) return; const index = gameState.characters[team].findIndex(c => c.id === charId); if (index > -1) { gameState.characters[team].splice(index, 1); if(gameState.selectedChar[team] === charId) gameState.selectedChar[team] = null; if(gameState.combatants[team] === charId) gameState.combatants[team] = null; saveData(); renderAll(); } }
-    function displayCharacterDetails(charId, team) {
-    const char = gameState.characters[team].find(c => c.id === charId);
-    const panel = document.getElementById(`active-panel-${team}`);
-    if (!char) { panel.innerHTML = `<div class="placeholder">角色不存在</div>`; return; }
-
-    let totalWeight = 0;
-    char.equipment.forEach(itemId => { const item = WEAPON_DB[itemId] || GEAR_DB[itemId]; if (item) totalWeight += item.weight; });
-    
-    const weaponOptions = Object.keys(WEAPON_DB).map(id => `<option value="${id}">${WEAPON_DB[id].name}</option>`).join('');
-    const gearOptions = Object.keys(GEAR_DB).map(id => `<option value="${id}">${GEAR_DB[id].name}</option>`).join('');
-    const skillOptions = Object.keys(SKILL_DB).map(id => `<option value="${id}">${SKILL_DB[id].name}</option>`).join('');
-    
-    panel.innerHTML = `
-        <div class="card-layout">
-            <div class="card-header">
-                <img src="${char.avatar}" class="card-avatar" id="avatar-${team}-${charId}">
-                <div class="card-name-title">
-                    <input type="text" value="${char.name}" onchange="updateCharValue('${char.id}', '${team}', 'name', this.value)">
-                    <input type="text" class="title" value="${char.title}" onchange="updateCharValue('${char.id}', '${team}', 'title', this.value)">
-                    <label class="avatar-upload-label">更換頭像 <input type="file" onchange="handleAvatarUpload(event, '${char.id}', '${team}')" accept="image/*" style="display:none;"></label>
-                </div>
-            </div>
-            <div class="card-stats">
-                <div class="stat-box"> <label>HP</label> <div class="value"><input type="number" value="${char.currentHP}" onchange="updateCharValue('${char.id}', '${team}', 'currentHP', this.value)"></div> </div>
-                <div class="stat-box"> <label>MOVE</label> <div class="value">${char.stats.mobility}</div> </div>
-                <div class="stat-box"> <label>STRENGTH</label> <div class="value">${char.stats.strength}</div> </div>
-                <div class="stat-box"> <label>PROFICIENCY</label> <div class="value">${char.primary_proficiency} / ${char.secondary_proficiency}</div> </div>
-                <div class="stat-box"> <label>WEIGHT</label> <div class="value">${totalWeight}</div> </div>
-            </div>
-            <div class="card-body">
-                <div class="card-section">
-                    <h4>裝備 (Equipment)</h4>
-                    <ul class="item-list">${char.equipment.map(id => { 
-                        const item = WEAPON_DB[id] || GEAR_DB[id]; 
-                        if(!item) return ''; 
-                        return `<li><div><strong>${item.name}</strong> (+${item.weight} WU)${formatEffects(item)}</div><span class="item-remove-btn" onclick="removeItem('${char.id}','${team}','equipment','${id}')">✕</span></li>`; 
-                    }).join('')}</ul>
-                    <div class="db-selection">
-                        <select id="equip-select-${team}"><optgroup label="武器">${weaponOptions}</optgroup><optgroup label="配件">${gearOptions}</optgroup></select>
-                        <button onclick="addItem('${char.id}','${team}','equipment','equip-select-${team}')">添加</button>
-                    </div>
-                </div>
-                <div class="card-section">
-                    <h4>技能 (Skills)</h4>
-                    <ul class="item-list">${char.skills.map(id => { 
-                        const skill = SKILL_DB[id]; 
-                        if(!skill) return ''; 
-                        return `<li><div><strong>${skill.name}</strong><br><small style="color: var(--text-secondary);">${skill.desc}</small></div><span class="item-remove-btn" onclick="removeItem('${char.id}','${team}','skills','${id}')">✕</span></li>`; 
-                    }).join('')}</ul>
-                    <div class="db-selection">
-                        <select id="skill-select-${team}">${skillOptions}</select>
-                        <button onclick="addItem('${char.id}','${team}','skills','skill-select-${team}')">添加</button>
-                    </div>
-                </div>
-            </div>
-            <div style="text-align: center; margin-top: 20px;"><button class="add-char-btn" onclick="selectCombatant('${char.id}', '${team}')">選為戰鬥單位</button></div>
-        </div>
-    `;
-}
+    function displayCharacterDetails(charId, team) { const char = gameState.characters[team].find(c => c.id === charId); const panel = document.getElementById(`active-panel-${team}`); if (!char) { panel.innerHTML = `<div class="placeholder">角色不存在</div>`; return; } let totalWeight = 0; char.equipment.forEach(itemId => { const item = WEAPON_DB[itemId] || GEAR_DB[itemId]; if (item) totalWeight += item.weight; }); const weaponOptions = Object.keys(WEAPON_DB).map(id => `<option value="${id}">${WEAPON_DB[id].name}</option>`).join(''); const gearOptions = Object.keys(GEAR_DB).map(id => `<option value="${id}">${GEAR_DB[id].name}</option>`).join(''); const skillOptions = Object.keys(SKILL_DB).map(id => `<option value="${id}">${SKILL_DB[id].name}</option>`).join(''); panel.innerHTML = ` <div class="card-layout"> <div class="card-header"><img src="${char.avatar}" class="card-avatar" id="avatar-${team}-${charId}"><div class="card-name-title"><input type="text" value="${char.name}" onchange="updateCharValue('${char.id}', '${team}', 'name', this.value)"><input type="text" class="title" value="${char.title}" onchange="updateCharValue('${char.id}', '${team}', 'title', this.value)"><label class="avatar-upload-label">更換頭像 <input type="file" onchange="handleAvatarUpload(event, '${char.id}', '${team}')" accept="image/*" style="display:none;"></label></div></div> <div class="card-stats"> <div class="stat-box"> <label>HP</label> <div class="value"><input type="number" value="${char.currentHP}" onchange="updateCharValue('${char.id}', '${team}', 'currentHP', this.value)"></div> </div> <div class="stat-box"> <label>MOVE</label> <div class="value">${char.stats.mobility}</div> </div> <div class="stat-box"> <label>STRENGTH</label> <div class="value">${char.stats.strength}</div> </div> <div class="stat-box"> <label>PROFICIENCY</label> <div class="value">${char.primary_proficiency} / ${char.secondary_proficiency}</div> </div> <div class="stat-box"> <label>WEIGHT</label> <div class="value">${totalWeight}</div> </div> </div> <div class="card-body"> <div class="card-section"> <h4>裝備 (Equipment)</h4> <ul class="item-list">${char.equipment.map(id => { const item = WEAPON_DB[id] || GEAR_DB[id]; if(!item) return ''; return `<li><div><strong>${item.name}</strong> (+${item.weight} WU)${formatEffects(item)}</div><span class="item-remove-btn" onclick="removeItem('${char.id}','${team}','equipment','${id}')">✕</span></li>`; }).join('')}</ul> <div class="db-selection"> <select id="equip-select-${team}"><optgroup label="武器">${weaponOptions}</optgroup><optgroup label="配件">${gearOptions}</optgroup></select> <button onclick="addItem('${char.id}','${team}','equipment','equip-select-${team}')">添加</button> </div> </div> <div class="card-section"> <h4>技能 (Skills)</h4> <ul class="item-list">${char.skills.map(id => { const skill = SKILL_DB[id]; if(!skill) return ''; return `<li><div><strong>${skill.name}</strong><br><small style="color: var(--text-secondary);">${skill.desc}</small></div><span class="item-remove-btn" onclick="removeItem('${char.id}','${team}','skills','${id}')">✕</span></li>`; }).join('')}</ul> <div class="db-selection"> <select id="skill-select-${team}">${skillOptions}</select> <button onclick="addItem('${char.id}','${team}','skills','skill-select-${team}')">添加</button> </div> </div> </div> <div style="text-align: center; margin-top: 20px;"><button class="add-char-btn" onclick="selectCombatant('${char.id}', '${team}')">選為戰鬥單位</button></div> </div> `; }
     function handleAvatarUpload(event, charId, team) { const file = event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (e) => { const char = gameState.characters[team].find(c => c.id === charId); if (char) { char.avatar = e.target.result; saveData(); renderAll(); } }; reader.readAsDataURL(file); } }
     function updateCharValue(charId, team, key, value) { const char = gameState.characters[team].find(c => c.id === charId); if (!char) return; const keys = key.split('.'); let obj = char; for (let i = 0; i < keys.length - 1; i++) { obj = obj[keys[i]]; } let finalValue = typeof obj[keys[keys.length - 1]] === 'number' ? parseInt(value) : value; obj[keys[keys.length - 1]] = finalValue; if (key === 'currentHP') { if (char.currentHP > 100) char.currentHP = 100; if (char.currentHP < 0) char.currentHP = 0; } saveData(); renderAll(); }
     function addItem(charId, team, itemType, selectId) { const char = gameState.characters[team].find(c => c.id === charId); const select = document.getElementById(selectId); const itemId = select.value; if(char && !char[itemType].includes(itemId)) { char[itemType].push(itemId); saveData(); renderAll(); } }
     function removeItem(charId, team, itemType, itemId) { const char = gameState.characters[team].find(c => c.id === charId); if (char) { const index = char[itemType].indexOf(itemId); if (index > -1) { char[itemType].splice(index, 1); saveData(); renderAll(); } } }
-    function formatEffects(item) {
-    if (!item.effects || item.effects.length === 0) {
-        return ''; // 如果沒有效果，返回空字串
-    }
-
-    const effectStrings = item.effects.map(effect => {
-        // 這是一個簡易的翻譯機，未來可以擴充
-        if (effect.stat) {
-            let statName = effect.stat;
-            // 簡單的中文翻譯
-            if (statName === 'maxHP') statName = '最大HP';
-            if (statName === 'mobility') statName = '機動';
-            if (statName === 'strength_calculation') statName = '肌力(計算用)';
-            if (statName === 'accuracy_short') statName = '近距離命中';
-            if (statName === 'crit_chance') statName = '暴擊率';
-            if (statName === 'crit_damage') statName = '暴擊傷害';
-            
-            return `${statName} ${effect.modifier}${effect.value}`;
-        }
-        if (effect.effect === 'apply_status') {
-            return `有 ${effect.chance * 100}% 機率附加【${effect.status}】狀態`;
-        }
-        return '特殊效果'; // 其他無法直接翻譯的效果
-    });
-
-    return `<br><small style="color: var(--text-secondary);">效果: ${effectStrings.join(' / ')}</small>`;
-}
-    function openAddCharModal(team) { const modal = document.getElementById('addCharModal'); const form = document.getElementById('addCharForm'); form.reset(); modal.style.display = 'flex'; document.getElementById('modalTitle').textContent = `新增 ${team === 'blue' ? '藍方' : '紅方'} 角色`; const nameInput = document.getElementById('charName'); nameInput.onblur = () => { const template = characterTemplateDB[nameInput.value]; if (template) { document.getElementById('charTitle').value = template.title; document.getElementById('charMobility').value = template.stats.mobility; document.getElementById('charStrength').value = template.stats.strength; document.getElementById('charAttack').value = template.stats.attack; document.getElementById('charPrimaryProf').value = template.primary_proficiency; document.getElementById('charSecondaryProf').value = template.secondary_proficiency; } }; form.onsubmit = (event) => addCharacter(team, event); }
+    function openAddCharModal(team) { const modal = document.getElementById('addCharModal'); const form = document.getElementById('addCharForm'); form.reset(); modal.style.display = 'flex'; document.getElementById('modalTitle').textContent = `新增 ${team === 'blue' ? '藍方' : '紅方'} 角色`; const nameInput = document.getElementById('charName'); nameInput.onblur = () => { const template = characterTemplateDB[nameInput.value]; if (template) { document.getElementById('charTitle').value = template.title; document.getElementById('charMobility').value = template.stats.mobility; document.getElementById('charStrength').value = template.stats.strength; document.getElementById('charPrimaryProf').value = template.primary_proficiency; document.getElementById('charSecondaryProf').value = template.secondary_proficiency; } }; form.onsubmit = (event) => addCharacter(team, event); }
     function closeAddCharModal() { document.getElementById('addCharModal').style.display = 'none'; }
+    function formatEffects(item) { if (!item.effects || item.effects.length === 0) return ''; const effectStrings = item.effects.map(effect => { if (effect.stat) { let statName = effect.stat; if (statName === 'maxHP') statName = '最大HP'; if (statName === 'mobility') statName = '機動'; if (statName === 'strength_calculation') statName = '肌力(計算用)'; if (statName === 'accuracy_short') statName = '近距離命中'; if (statName === 'crit_chance') statName = '暴擊率'; if (statName === 'crit_damage') statName = '暴擊傷害'; return `${statName} ${effect.modifier}${effect.value}`; } if (effect.effect === 'apply_status') { return `有 ${effect.chance * 100}% 機率附加【${effect.status}】狀態`; } return '特殊效果'; }); return `<br><small style="color: var(--text-secondary);">效果: ${effectStrings.join(' / ')}</small>`; }
     function selectCombatant(charId, team) { const char = gameState.characters[team].find(c => c.id === charId); if (char) { gameState.combatants[team] = charId; updateCombatPanel(); } }
-    function updateCombatPanel() { const blueChar = gameState.characters['blue'].find(c => c.id === gameState.combatants['blue']); const redChar = gameState.characters['red'].find(c => c.id === gameState.combatants['red']); document.getElementById('combatant-name-blue').textContent = blueChar ? blueChar.name : '選擇藍方'; document.getElementById('combatant-avatar-blue').src = blueChar ? blueChar.avatar : 'https://via.placeholder.com/80?text=?'; document.getElementById('combatant-name-red').textContent = redChar ? redChar.name : '選擇紅方'; document.getElementById('combatant-avatar-red').src = redChar ? redChar.avatar : 'https://via.placeholder.com/80?text=?'; }
-    function simulateCombat() {
-    const blueChar = gameState.characters['blue'].find(c => c.id === gameState.combatants['blue']);
-    const redChar = gameState.characters['red'].find(c => c.id === gameState.combatants['red']);
-    const combatLog = document.getElementById('combat-log');
-    combatLog.innerHTML = '<strong>戰鬥記錄:</strong><br>';
-
-    if (!blueChar || !redChar) { combatLog.innerHTML += `<p style="color:red;">請確保雙方都已選擇戰鬥單位！</p>`; return; }
-    
-    const log = (message) => { combatLog.innerHTML += `<p>${message}</p>`; combatLog.scrollTop = combatLog.scrollHeight;};
-    log(`>>> ${blueChar.name} 對 ${redChar.name} 發動攻擊！`);
-
-    const weapon = blueChar.equipment.map(id => WEAPON_DB[id]).find(item => item && item.type === 'primary');
-    if (!weapon) { log(`❌ ${blueChar.name} 沒有裝備主武器！`); return; }
-    
-    // --- 準備階段 (已升級) ---
-    const proficiencyKey = weapon.type === 'primary' ? 'primary_proficiency' : 'secondary_proficiency';
-    const proficiencyLevel = blueChar[proficiencyKey] || 'E';
-    const proficiencyMod = PROFICIENCY_MODIFIERS[proficiencyLevel] || 0.8;
-    
-    // 假設是中距離戰鬥，未來可擴充
-    let baseAccuracy = weapon.accuracy_mid; 
-    let finalBaseDamage = weapon.base_damage * proficiencyMod;
-    log(`武器熟稔度(${proficiencyLevel}): 效率 ${proficiencyMod * 100}%`);
-
-    // --- NEW: 計算所有被動加成 ---
-    let passiveBonuses = { accuracy: 0, damage: 0, crit_chance: 0, crit_damage: 0 };
-    blueChar.equipment.forEach(id => {
-        const item = GEAR_DB[id]; // 只檢查配件/護甲
-        if (item && item.effects) {
-            item.effects.forEach(effect => {
-                if(effect.stat && effect.stat.includes('accuracy')) { // 簡易判斷
-                    passiveBonuses.accuracy += effect.value;
-                    log(`⚡ 來自 [${item.name}] 的加成: 命中 +${effect.value}`);
-                }
-                // TODO: 在此加入更多其他加成 (暴擊、傷害等) 的計算
-            });
-        }
-    });
-    // --- END NEW ---
-
-    const finalBaseAccuracy = (baseAccuracy + passiveBonuses.accuracy) * proficiencyMod;
-
-    // --- 第 I 步：命中判定 ---
-    const finalHitChance = finalBaseAccuracy; 
-    const hitRoll = Math.floor(Math.random() * 100) + 1;
-    log(`擲骰判定命中 (d100 <= ${finalHitChance.toFixed(0)})... 結果: ${hitRoll}`);
-
-    if (hitRoll > finalHitChance) {
-        log(`💥 MISS!! 攻擊失手！`);
-        return; 
-    }
-    
-    // ... 後續的護甲、傷害、暴擊判定等邏輯保持不變 ...
-    log(`✔️ 初步命中！進入護甲判定...`);
-    const attackAngle = document.getElementById('attack-angle').value;
-    const coverageKey = `coverage_${attackAngle}`;
-    let highestCoverage = 0, blockingArmorId = null;
-    redChar.equipment.forEach(id => { const item = GEAR_DB[id]; if (item && (item.gear_type === 'armor' || item.gear_type === 'shield') && item[coverageKey] > highestCoverage) { highestCoverage = item[coverageKey]; blockingArmorId = id; } });
-    if (highestCoverage > 0) { const blockRoll = Math.floor(Math.random() * 100) + 1; log(`防禦方 ${attackAngle} 方向防禦率為 ${highestCoverage}%`); log(`擲骰判定格擋 (d100 <= ${highestCoverage})... 結果: ${blockRoll}`); if (blockRoll <= highestCoverage) { const blockingArmor = GEAR_DB[blockingArmorId]; log(`🛡️ 被擋下了!! 攻擊被 ${blockingArmor.name} 阻擋！`); blockingArmor.durability -= 1; log(`${blockingArmor.name} 耐久度剩餘 ${blockingArmor.durability}`); if(blockingArmor.durability <= 0) log(`⚠️ ${blockingArmor.name} 已失效！`); saveData(); renderAll(); return; } }
-    log(`🩸 攻擊穿透防禦，命中肉身！`);
-    const variance = (Math.random() * 0.10) - 0.05;
-    let damage = finalBaseDamage * (1 + variance);
-    log(`計算基礎傷害... ${finalBaseDamage.toFixed(1)} * (1 ${variance > 0 ? '+' : ''} ${variance.toFixed(2)}) = ${damage.toFixed(1)}`);
-    const critChance = 5 + passiveBonuses.crit_chance; // 可擴充
-    const critRoll = Math.floor(Math.random() * 100) + 1;
-    log(`擲骰判定暴擊 (d100 >= ${101 - critChance})... 結果: ${critRoll}`);
-    if (critRoll >= (101 - critChance)) { const critBonus = 0.05 + (passiveBonuses.crit_damage / 100); const extraDamage = damage * critBonus; damage += extraDamage; log(`💥 CRITICAL HIT!! 額外造成 ${extraDamage.toFixed(1)} 傷害！`); }
-    const finalDamage = Math.round(damage);
-    redChar.currentHP -= finalDamage;
-    if (redChar.currentHP < 0) redChar.currentHP = 0;
-    log(`造成最終傷害: ${finalDamage} 點！`);
-    log(`${redChar.name} 剩餘 HP: ${redChar.currentHP}/100`);
-    if (redChar.currentHP <= 0) log(`☠️ ${redChar.name} 已被擊敗！`);
-    saveData();
-    renderAll();
-}
+    function updateCombatPanel() { const blueChar = gameState.characters['blue'].find(c => c.id === gameState.combatants['blue']); const redChar = gameState.characters['red'].find(c => c.id === gameState.combatants['red']); document.getElementById('combatant-name-blue').textContent = blueChar ? blueChar.name : '選擇藍方'; document.getElementById('combatant-avatar-blue').src = blueChar ? blueChar.avatar : 'https://placehold.co/80x80?text=?'; document.getElementById('combatant-name-red').textContent = redChar ? redChar.name : '選擇紅方'; document.getElementById('combatant-avatar-red').src = redChar ? redChar.avatar : 'https://placehold.co/80x80?text=?'; }
+    function simulateCombat() { const blueChar = gameState.characters['blue'].find(c => c.id === gameState.combatants['blue']); const redChar = gameState.characters['red'].find(c => c.id === gameState.combatants['red']); const combatLog = document.getElementById('combat-log'); combatLog.innerHTML = '<strong>戰鬥記錄:</strong><br>'; if (!blueChar || !redChar) { combatLog.innerHTML += `<p style="color:red;">請確保雙方都已選擇戰鬥單位！</p>`; return; } const log = (message) => { combatLog.innerHTML += `<p>${message}</p>`; combatLog.scrollTop = combatLog.scrollHeight;}; log(`>>> ${blueChar.name} 對 ${redChar.name} 發動攻擊！`); const weapon = blueChar.equipment.map(id => WEAPON_DB[id]).find(item => item && item.type === 'primary'); if (!weapon) { log(`❌ ${blueChar.name} 沒有裝備主武器！`); return; } const proficiencyKey = weapon.type === 'primary' ? 'primary_proficiency' : 'secondary_proficiency'; const proficiencyLevel = blueChar[proficiencyKey] || 'E'; const proficiencyMod = PROFICIENCY_MODIFIERS[proficiencyLevel] || 0.8; let baseAccuracy = weapon.accuracy_mid; let finalBaseDamage = weapon.base_damage * proficiencyMod; log(`武器熟稔度(${proficiencyLevel}): 效率 ${proficiencyMod * 100}%`); let passiveBonuses = { accuracy: 0, damage: 0, crit_chance: 0, crit_damage: 0 }; blueChar.equipment.forEach(id => { const item = GEAR_DB[id]; if (item && item.effects) { item.effects.forEach(effect => { if(effect.stat && effect.stat.includes('accuracy')) { passiveBonuses.accuracy += effect.value; log(`⚡ 來自 [${item.name}] 的加成: 命中 +${effect.value}`); } }); } }); const finalBaseAccuracy = (baseAccuracy + passiveBonuses.accuracy) * proficiencyMod; const finalHitChance = finalBaseAccuracy; const hitRoll = Math.floor(Math.random() * 100) + 1; log(`擲骰判定命中 (d100 <= ${finalHitChance.toFixed(0)})... 結果: ${hitRoll}`); if (hitRoll > finalHitChance) { log(`💥 MISS!! 攻擊失手！`); return; } log(`✔️ 初步命中！進入護甲判定...`); const attackAngle = document.getElementById('attack-angle').value; const coverageKey = `coverage_${attackAngle}`; let highestCoverage = 0, blockingArmorId = null; redChar.equipment.forEach(id => { const item = GEAR_DB[id]; if (item && (item.gear_type === 'armor' || item.gear_type === 'shield') && item[coverageKey] > highestCoverage) { highestCoverage = item[coverageKey]; blockingArmorId = id; } }); if (highestCoverage > 0) { const blockRoll = Math.floor(Math.random() * 100) + 1; log(`防禦方 ${attackAngle} 方向防禦率為 ${highestCoverage}%`); log(`擲骰判定格擋 (d100 <= ${highestCoverage})... 結果: ${blockRoll}`); if (blockRoll <= highestCoverage) { const blockingArmor = GEAR_DB[blockingArmorId]; log(`🛡️ 被擋下了!! 攻擊被 ${blockingArmor.name} 阻擋！`); blockingArmor.durability -= 1; log(`${blockingArmor.name} 耐久度剩餘 ${blockingArmor.durability}`); if(blockingArmor.durability <= 0) log(`⚠️ ${blockingArmor.name} 已失效！`); saveData(); renderAll(); return; } } log(`🩸 攻擊穿透防禦，命中肉身！`); const variance = (Math.random() * 0.10) - 0.05; let damage = finalBaseDamage * (1 + variance); log(`計算基礎傷害... ${finalBaseDamage.toFixed(1)} * (1 ${variance > 0 ? '+' : ''} ${variance.toFixed(2)}) = ${damage.toFixed(1)}`); const critChance = 5 + passiveBonuses.crit_chance; const critRoll = Math.floor(Math.random() * 100) + 1; log(`擲骰判定暴擊 (d100 >= ${101 - critChance})... 結果: ${critRoll}`); if (critRoll >= (101 - critChance)) { const critBonus = 0.05 + (passiveBonuses.crit_damage / 100); const extraDamage = damage * critBonus; damage += extraDamage; log(`💥 CRITICAL HIT!! 額外造成 ${extraDamage.toFixed(1)} 傷害！`); } const finalDamage = Math.round(damage); redChar.currentHP -= finalDamage; if (redChar.currentHP < 0) redChar.currentHP = 0; log(`造成最終傷害: ${finalDamage} 點！`); log(`${redChar.name} 剩餘 HP: ${redChar.currentHP}/100`); if (redChar.currentHP <= 0) log(`☠️ ${redChar.name} 已被擊敗！`); saveData(); renderAll(); }
     
     // --- Initialization ---
     window.onload = async () => {
         await fetchAllGameData();
         loadData();
         renderAll();
-        document.getElementById('loading-overlay').style.display = 'none';
     };
     </script>
 </body>
-
 </html>
-
-
-
-
-
