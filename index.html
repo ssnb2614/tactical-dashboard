@@ -125,9 +125,10 @@
 
     // --- Core Functions ---
     async function fetchAllGameData() {
-        const urls = {
+        const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.textContent = '正在從 Google Sheets 載入遊戲規則...';
+    loadingOverlay.style.display = 'flex';
             // !!! 請務必將下方四個網址替換為您自己的 Google Sheet CSV 發佈網址 !!!
-            // 這次不需要加上 CORS 代理前綴了
             characters: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTQyn3ID7LBfpRjYBuX1mLweeQ1sr7thV4WHMiG5AqiqURFJftxuJ2z_8XXNPL8yIt7avYq8xfmPv09/pub?gid=0&single=true&output=csv',
             weapons: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSUgRC-c-_jUmGAF6CJn3P057w0bc43uWBTnmPbEVUSSPa4GlWqudaM7HY3Oc_NIgI9L_mPEai3weRS/pub?gid=619091591&single=true&output=csv',
             gear: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRhpFeTps4MlzO_sRZbABh_YhjmNngDRfYUjoyfJm7KqEemObopE9RQ_V30C8ZWgvclRBUuqcU5BVOI/pub?gid=2032212675&single=true&output=csv',
@@ -135,43 +136,65 @@
         };
 
         try {
-            const responses = await Promise.all([
-                fetch(urls.characters).then(res => res.text()), fetch(urls.weapons).then(res => res.text()),
-                fetch(urls.gear).then(res => res.text()), fetch(urls.skills).then(res => res.text())
-            ]);
-            const [charCsv, weaponCsv, gearCsv, skillCsv] = responses;
+        const responses = await Promise.all([
+            fetch(urls.characters).then(res => res.text()), fetch(urls.weapons).then(res => res.text()),
+            fetch(urls.gear).then(res => res.text()), fetch(urls.skills).then(res => res.text())
+        ]);
+        
+        const [charCsv, weaponCsv, gearCsv, skillCsv] = responses;
 
-            // Parsing logic is the same as the one we perfected
-            characterTemplateDB = {};
-            charCsv.split('\n').slice(1).forEach(row => {
-                const cols = row.trim().split(','); if (cols.length < 8) return;
-                const t = { id: cols[0], name: cols[1], title: cols[2], stats: { mobility: parseInt(cols[3]), strength: parseInt(cols[4]), attack: cols[5] }, primary_proficiency: cols[6], secondary_proficiency: cols[7].trim() };
-                characterTemplateDB[t.name] = t;
+        // --- Super-Debug Parsing ---
+        const parseCsv = (csvText, fileName, parserFunc) => {
+            console.log(`正在解析 ${fileName}...`);
+            const rows = csvText.split('\n').slice(1);
+            rows.forEach((row, index) => {
+                if (!row.trim()) return;
+                try {
+                    parserFunc(row, index);
+                } catch (error) {
+                    // 當發生錯誤時，拋出一個包含更詳細資訊的新錯誤
+                    throw new Error(`解析檔案 [${fileName}] 的第 ${index + 2} 行時發生錯誤: ${error.message}. 問題內容: "${row.trim()}"`);
+                }
             });
-            WEAPON_DB = {};
-            weaponCsv.split('\n').slice(1).forEach(row => {
-                const cols = row.trim().split(','); if (cols.length < 10) return;
-                const effectsString = cols[9] ? cols[9].trim() : '[]';
-                WEAPON_DB[cols[0]] = { name: cols[1], weight: parseInt(cols[2]), type: cols[3], ammo_type: cols[4], base_damage: parseInt(cols[5]), accuracy_short: parseInt(cols[6]), accuracy_mid: parseInt(cols[7]), accuracy_long: parseInt(cols[8]), effects: JSON.parse(effectsString) };
-            });
-            GEAR_DB = {};
-            gearCsv.split('\n').slice(1).forEach(row => {
-                const cols = row.trim().split(','); if (cols.length < 11) return;
-                const effectsString = cols[10] ? cols[10].trim() : '[]';
-                GEAR_DB[cols[0]] = { name: cols[1], weight: parseInt(cols[2]), gear_type: cols[3], mobility_penalty: parseInt(cols[4]), coverage_front: parseInt(cols[5]), coverage_side: parseInt(cols[6]), coverage_rear: parseInt(cols[7]), durability: parseInt(cols[8]), armor_level: cols[9], effects: JSON.parse(effectsString) };
-            });
-            SKILL_DB = {};
-            skillCsv.split('\n').slice(1).forEach(row => {
-                const cols = row.trim().split(','); if (cols.length < 4) return;
-                const effectsString = cols[3] ? cols[3].trim() : '[]';
-                SKILL_DB[cols[0]] = { name: cols[1], type: cols[2], effects: JSON.parse(effectsString) };
-            });
-            console.log('所有遊戲資料已成功從 Google Sheets 載入！');
-        } catch (error) {
-            console.error('無法載入遊戲資料:', error);
-            document.getElementById('loading-overlay').textContent = '載入遊戲規則失敗！請檢查您的.csv連結或網路。';
-        }
+            console.log(`✅ ${fileName} 解析成功!`);
+        };
+
+        // Characters
+        parseCsv(charCsv, "characters.csv", (row, index) => {
+            const cols = row.trim().split(','); if (cols.length < 8) return;
+            const t = { id: cols[0], name: cols[1], title: cols[2], stats: { mobility: parseInt(cols[3]), strength: parseInt(cols[4]) }, primary_proficiency: cols[5], secondary_ proficiency: cols[6].trim() };
+            characterTemplateDB[t.name] = t;
+        });
+
+        // Weapons
+        parseCsv(weaponCsv, "weapons.csv", (row, index) => {
+            const cols = row.trim().split(','); if (cols.length < 10) return;
+            const effectsString = cols[9] ? cols[9].trim() : '[]';
+            WEAPON_DB[cols[0]] = { name: cols[1], weight: parseInt(cols[2]), type: cols[3], ammo_type: cols[4], base_damage: parseInt(cols[5]), accuracy_short: parseInt(cols[6]), accuracy_mid: parseInt(cols[7]), accuracy_long: parseInt(cols[8]), effects: JSON.parse(effectsString) };
+        });
+
+        // Gear
+        parseCsv(gearCsv, "gear.csv", (row, index) => {
+            const cols = row.trim().split(','); if (cols.length < 11) return;
+            const effectsString = cols[10] ? cols[10].trim() : '[]';
+            GEAR_DB[cols[0]] = { name: cols[1], weight: parseInt(cols[2]), gear_type: cols[3], mobility_penalty: parseInt(cols[4]), coverage_front: parseInt(cols[5]), coverage_side: parseInt(cols[6]), coverage_rear: parseInt(cols[7]), durability: parseInt(cols[8]), armor_level: cols[9], effects: JSON.parse(effectsString) };
+        });
+
+        // Skills
+        parseCsv(skillCsv, "skills.csv", (row, index) => {
+            const cols = row.trim().split(','); if (cols.length < 4) return;
+            const effectsString = cols[3] ? cols[3].trim() : '[]';
+            SKILL_DB[cols[0]] = { name: cols[1], type: cols[2], effects: JSON.parse(effectsString) };
+        });
+
+        console.log('--- 所有遊戲資料已成功解析！ ---');
+        loadingOverlay.style.display = 'none';
+
+    } catch (error) {
+        console.error('載入或解析遊戲資料時發生嚴重錯誤:', error);
+        loadingOverlay.textContent = `載入失敗！錯誤訊息: ${error.message}`; // 直接顯示詳細錯誤
     }
+}
 
     function saveData() { localStorage.setItem('tacticalDashboardData_v4.0', JSON.stringify(gameState.characters)); }
     function loadData() {
@@ -389,4 +412,5 @@
 </body>
 
 </html>
+
 
