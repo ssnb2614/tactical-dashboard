@@ -103,6 +103,29 @@
             border-radius: 4px;
             text-align: center;
         }
+        .skill-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+      }
+        .skill-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-shrink: 0; /* 防止按鈕被壓縮 */
+      }
+        .skill-use-btn {
+          padding: 5px 10px;
+          background-color: var(--blue-team);
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+      }
+        .skill-use-btn:disabled {
+          background-color: var(--text-secondary);
+          cursor: not-allowed;
+      }
     </style>
 </head>
 <body>
@@ -213,10 +236,19 @@
                 GEAR_DB[cols[0]] = { name: cols[1], weight: parseInt(cols[2]), gear_type: cols[3], mobility_penalty: parseInt(cols[4]), coverage_front: parseInt(cols[5]), coverage_side: parseInt(cols[6]), coverage_rear: parseInt(cols[7]), durability: parseInt(cols[8]), armor_level: cols[9], effects: JSON.parse(effectsString) };
             });
             SKILL_DB = {};
-            skillCsv.split('\n').slice(1).forEach(row => {
-                if (!row.trim()) return; const cols = row.trim().split(','); if (cols.length < 3) return;
-                const effectsString = cols[3] ? cols[3].trim() : '[]';
-                SKILL_DB[cols[0]] = { name: cols[1], type: cols[2], effects: JSON.parse(effectsString) };
+            const skillRows = skillCsv.split('\n').slice(1);
+            skillRows.forEach((row, index) => {
+                if (!row.trim()) return;
+                const cols = row.trim().split(',');
+                if (cols.length < 5) throw new Error(`第 ${index + 2} 行欄位數不足 (應至少5欄)`);
+                const effectsString = cols[5] ? cols[5].trim() : '[]';
+                SKILL_DB[cols[0]] = { 
+                    name: cols[1], 
+                    type: cols[2], 
+                    desc: cols[3], 
+                    uses: parseInt(cols[4]), 
+                    effects: JSON.parse(effectsString) 
+                };
             });
 
             console.log('所有遊戲資料已成功載入！');
@@ -257,7 +289,8 @@
         passive_skill_id: template ? template.passive_skill_id : null, 
         avatar: 'https://placehold.co/100x100?text=?', 
         equipment: [], 
-        skills: [] 
+        skills: [], 
+        skillCharges: {} 
     };
     
     gameState.characters[team].push(newChar);
@@ -275,15 +308,12 @@
     let totalWeight = 0;
     char.equipment.forEach(itemId => { const item = WEAPON_DB[itemId] || GEAR_DB[itemId]; if (item) totalWeight += item.weight; });
     
-    const activeSkillOptions = Object.keys(SKILL_DB)
-        .filter(id => SKILL_DB[id].type === 'active')
-        .map(id => `<option value="${id}">${SKILL_DB[id].name}</option>`).join('');
-
+    const activeSkillOptions = Object.keys(SKILL_DB).filter(id => SKILL_DB[id].type === 'active').map(id => `<option value="${id}">${SKILL_DB[id].name}</option>`).join('');
     const weaponOptions = Object.keys(WEAPON_DB).map(id => `<option value="${id}">${WEAPON_DB[id].name}</option>`).join('');
     const gearOptions = Object.keys(GEAR_DB).map(id => `<option value="${id}">${GEAR_DB[id].name}</option>`).join('');
-
+    
     const passiveSkill = SKILL_DB[char.passive_skill_id];
-    let passiveSkillHTML = `<h4>固有被動技能 (Passive)</h4><div class="passive-skill-box">無能之輩</div>`;
+    let passiveSkillHTML = `<h4>固有被動技能 (Passive)</h4><div class="passive-skill-box">無</div>`;
     if (passiveSkill) {
         passiveSkillHTML = `
             <h4>固有被動技能 (Passive)</h4>
@@ -298,7 +328,12 @@
     panel.innerHTML = `
         <div class="card-layout">
             <div class="card-header">
-                <img src="${char.avatar}" class="card-avatar" id="avatar-${team}-${charId}"><div class="card-name-title"><input type="text" value="${char.name}" onchange="updateCharValue('${char.id}', '${team}', 'name', this.value)"><input type="text" class="title" value="${char.title}" onchange="updateCharValue('${char.id}', '${team}', 'title', this.value)"><label class="avatar-upload-label">更換頭像 <input type="file" onchange="handleAvatarUpload(event, '${char.id}', '${team}')" accept="image/*" style="display:none;"></label></div>
+                <img src="${char.avatar}" class="card-avatar" id="avatar-${team}-${charId}">
+                <div class="card-name-title">
+                    <input type="text" value="${char.name}" onchange="updateCharValue('${char.id}', '${team}', 'name', this.value)">
+                    <input type="text" class="title" value="${char.title}" onchange="updateCharValue('${char.id}', '${team}', 'title', this.value)">
+                    <label class="avatar-upload-label">更換頭像 <input type="file" onchange="handleAvatarUpload(event, '${char.id}', '${team}')" accept="image/*" style="display:none;"></label>
+                </div>
             </div>
             <div class="card-stats">
                 <div class="stat-row"><div class="stat-box"> <label>HP</label> <div class="value"><input type="number" value="${char.currentHP}" onchange="updateCharValue('${char.id}', '${team}', 'currentHP', this.value)"></div> </div><div class="stat-box"> <label>MOVE</label> <div class="value">${char.stats.mobility}</div> </div><div class="stat-box"> <label>STRENGTH</label> <div class="value">${char.stats.strength}</div> </div><div class="stat-box"> <label>WEIGHT</label> <div class="value">${totalWeight}</div> </div></div>
@@ -307,11 +342,31 @@
             <div class="card-body">
                 <div class="card-section">
                     <h4>裝備 (Equipment)</h4>
-                    <ul class="item-list">${char.equipment.map(id => { const item = WEAPON_DB[id] || GEAR_DB[id]; if(!item) return ''; return `<li><div><strong>${item.name}</strong> (+${item.weight} WU)${formatEffects(item)}</div><span class="item-remove-btn" onclick="removeItem('${char.id}','${team}','equipment','${id}')">✕</span></li>`; }).join('')}</ul> <div class="db-selection"> <select id="equip-select-${team}"><optgroup label="武器">${weaponOptions}</optgroup><optgroup label="配件">${gearOptions}</optgroup></select> <button onclick="addItem('${char.id}','${team}','equipment','equip-select-${team}')">添加</button> </div>
+                    <ul class="item-list">${char.equipment.map(id => { const item = WEAPON_DB[id] || GEAR_DB[id]; if(!item) return ''; return `<li><div><strong>${item.name}</strong> (+${item.weight} WU)${formatEffects(item)}</div><span class="item-remove-btn" onclick="removeItem('${char.id}','${team}','equipment','${id}')">✕</span></li>`; }).join('')}</ul>
+                    <div class="db-selection"> <select id="equip-select-${team}"><optgroup label="武器">${weaponOptions}</optgroup><optgroup label="配件">${gearOptions}</optgroup></select> <button onclick="addItem('${char.id}','${team}','equipment','equip-select-${team}')">添加</button> </div>
                 </div>
                 <div class="card-section">
                     <h4>主動技能 (Active)</h4>
-                    <ul class="item-list">${char.skills.map(id => { const skill = SKILL_DB[id]; if(!skill) return ''; return `<li><div><strong>${skill.name}</strong><br><small style="color: var(--text-secondary);">${skill.desc}</small></div><span class="item-remove-btn" onclick="removeItem('${char.id}','${team}','skills','${id}')">✕</span></li>`; }).join('')}</ul>
+                    <ul class="item-list">
+                        ${char.skills.map(id => {
+                            const skill = SKILL_DB[id];
+                            if (!skill) return '';
+                            if (char.skillCharges[id] === undefined) { char.skillCharges[id] = skill.uses; }
+                            const remainingUses = char.skillCharges[id];
+                            const buttonDisabled = remainingUses <= 0 ? 'disabled' : '';
+                            return `
+                                <li class="skill-item">
+                                    <div>
+                                        <strong>${skill.name}</strong><br>
+                                        <small style="color: var(--text-secondary);">${skill.desc}</small>
+                                    </div>
+                                    <div class="skill-actions">
+                                        <span class="skill-uses">(${remainingUses}/${skill.uses})</span>
+                                        <button class="skill-use-btn" onclick="activateSkill('${char.id}', '${team}', '${id}')" ${buttonDisabled}>使用</button>
+                                    </div>
+                                </li>`;
+                        }).join('')}
+                    </ul>
                     <div class="db-selection">
                         <select id="skill-select-${team}">${activeSkillOptions}</select>
                         <button onclick="addItem('${char.id}','${team}','skills','skill-select-${team}')">添加</button>
@@ -362,6 +417,22 @@
     function formatEffects(item) { if (!item.effects || item.effects.length === 0) return ''; const effectStrings = item.effects.map(effect => { if (effect.stat) { let statName = effect.stat; if (statName === 'maxHP') statName = '最大HP'; if (statName === 'mobility') statName = '機動'; if (statName === 'strength_calculation') statName = '肌力(計算用)'; if (statName === 'accuracy_short') statName = '近距離命中'; if (statName === 'crit_chance') statName = '暴擊率'; if (statName === 'crit_damage') statName = '暴擊傷害'; return `${statName} ${effect.modifier}${effect.value}`; } if (effect.effect === 'apply_status') { return `有 ${effect.chance * 100}% 機率附加【${effect.status}】狀態`; } return '特殊效果'; }); return `<br><small style="color: var(--text-secondary);">效果: ${effectStrings.join(' / ')}</small>`; }
     function selectCombatant(charId, team) { const char = gameState.characters[team].find(c => c.id === charId); if (char) { gameState.combatants[team] = charId; updateCombatPanel(); } }
     function updateCombatPanel() { const blueChar = gameState.characters['blue'].find(c => c.id === gameState.combatants['blue']); const redChar = gameState.characters['red'].find(c => c.id === gameState.combatants['red']); document.getElementById('combatant-name-blue').textContent = blueChar ? blueChar.name : '選擇藍方'; document.getElementById('combatant-avatar-blue').src = blueChar ? blueChar.avatar : 'https://placehold.co/80x80?text=?'; document.getElementById('combatant-name-red').textContent = redChar ? redChar.name : '選擇紅方'; document.getElementById('combatant-avatar-red').src = redChar ? redChar.avatar : 'https://placehold.co/80x80?text=?'; }
+    function activateSkill(charId, team, skillId) {
+    const char = gameState.characters[team].find(c => c.id === charId);
+    const skill = SKILL_DB[skillId];
+    if (!char || !skill || char.skillCharges[skillId] <= 0) {
+        return; 
+    }
+
+    char.skillCharges[skillId]--;
+
+    console.log(`角色 ${char.name} 使用了技能 [${skill.name}]！`);
+    console.log("技能效果 (effects):", skill.effects);
+    console.log("下一步：我們需要在 simulateCombat 中加入邏輯來實際套用這些效果。");
+    
+    saveData();
+    renderAll();
+}
     function simulateCombat() { const blueChar = gameState.characters['blue'].find(c => c.id === gameState.combatants['blue']); const redChar = gameState.characters['red'].find(c => c.id === gameState.combatants['red']); const combatLog = document.getElementById('combat-log'); combatLog.innerHTML = '<strong>戰鬥記錄:</strong><br>'; if (!blueChar || !redChar) { combatLog.innerHTML += `<p style="color:red;">請確保雙方都已選擇戰鬥單位！</p>`; return; } const log = (message) => { combatLog.innerHTML += `<p>${message}</p>`; combatLog.scrollTop = combatLog.scrollHeight;}; log(`>>> ${blueChar.name} 對 ${redChar.name} 發動攻擊！`); const weapon = blueChar.equipment.map(id => WEAPON_DB[id]).find(item => item && item.type === 'primary'); if (!weapon) { log(`❌ ${blueChar.name} 沒有裝備主武器！`); return; } const proficiencyKey = weapon.type === 'primary' ? 'primary_proficiency' : 'secondary_proficiency'; const proficiencyLevel = blueChar[proficiencyKey] || 'E'; const proficiencyMod = PROFICIENCY_MODIFIERS[proficiencyLevel] || 0.8; let baseAccuracy = weapon.accuracy_mid; let finalBaseDamage = weapon.base_damage * proficiencyMod; log(`武器熟稔度(${proficiencyLevel}): 效率 ${proficiencyMod * 100}%`); let passiveBonuses = { accuracy: 0, damage: 0, crit_chance: 0, crit_damage: 0 }; blueChar.equipment.forEach(id => { const item = GEAR_DB[id]; if (item && item.effects) { item.effects.forEach(effect => { if(effect.stat && effect.stat.includes('accuracy')) { passiveBonuses.accuracy += effect.value; log(`⚡ 來自 [${item.name}] 的加成: 命中 +${effect.value}`); } }); } }); const finalBaseAccuracy = (baseAccuracy + passiveBonuses.accuracy) * proficiencyMod; const finalHitChance = finalBaseAccuracy; const hitRoll = Math.floor(Math.random() * 100) + 1; log(`擲骰判定命中 (d100 <= ${finalHitChance.toFixed(0)})... 結果: ${hitRoll}`); if (hitRoll > finalHitChance) { log(`💥 MISS!! 攻擊失手！`); return; } log(`✔️ 初步命中！進入護甲判定...`); const attackAngle = document.getElementById('attack-angle').value; const coverageKey = `coverage_${attackAngle}`; let highestCoverage = 0, blockingArmorId = null; redChar.equipment.forEach(id => { const item = GEAR_DB[id]; if (item && (item.gear_type === 'armor' || item.gear_type === 'shield') && item[coverageKey] > highestCoverage) { highestCoverage = item[coverageKey]; blockingArmorId = id; } }); if (highestCoverage > 0) { const blockRoll = Math.floor(Math.random() * 100) + 1; log(`防禦方 ${attackAngle} 方向防禦率為 ${highestCoverage}%`); log(`擲骰判定格擋 (d100 <= ${highestCoverage})... 結果: ${blockRoll}`); if (blockRoll <= highestCoverage) { const blockingArmor = GEAR_DB[blockingArmorId]; log(`🛡️ 被擋下了!! 攻擊被 ${blockingArmor.name} 阻擋！`); blockingArmor.durability -= 1; log(`${blockingArmor.name} 耐久度剩餘 ${blockingArmor.durability}`); if(blockingArmor.durability <= 0) log(`⚠️ ${blockingArmor.name} 已失效！`); saveData(); renderAll(); return; } } log(`🩸 攻擊穿透防禦，命中肉身！`); const variance = (Math.random() * 0.10) - 0.05; let damage = finalBaseDamage * (1 + variance); log(`計算基礎傷害... ${finalBaseDamage.toFixed(1)} * (1 ${variance > 0 ? '+' : ''} ${variance.toFixed(2)}) = ${damage.toFixed(1)}`); const critChance = 5 + passiveBonuses.crit_chance; const critRoll = Math.floor(Math.random() * 100) + 1; log(`擲骰判定暴擊 (d100 >= ${101 - critChance})... 結果: ${critRoll}`); if (critRoll >= (101 - critChance)) { const critBonus = 0.05 + (passiveBonuses.crit_damage / 100); const extraDamage = damage * critBonus; damage += extraDamage; log(`💥 CRITICAL HIT!! 額外造成 ${extraDamage.toFixed(1)} 傷害！`); } const finalDamage = Math.round(damage); redChar.currentHP -= finalDamage; if (redChar.currentHP < 0) redChar.currentHP = 0; log(`造成最終傷害: ${finalDamage} 點！`); log(`${redChar.name} 剩餘 HP: ${redChar.currentHP}/100`); if (redChar.currentHP <= 0) log(`☠️ ${redChar.name} 已被擊敗！`); saveData(); renderAll(); }
     
     // --- Initialization ---
@@ -373,6 +444,7 @@
     </script>
 </body>
 </html>
+
 
 
 
