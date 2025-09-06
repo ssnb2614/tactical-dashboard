@@ -229,7 +229,7 @@
     event.preventDefault(); // <-- 就是這一行！它能神奇地阻止頁面重新整理。
     
     const newChar = {
-        id: 'char_' ' + Date.now(),
+        id: 'char_' + Date.now(),
         name: document.getElementById('charName').value || '新兵',
         title: document.getElementById('charTitle').value || '無名小卒',
         maxHP: 100, 
@@ -344,6 +344,7 @@
     </script>
 </body>
 </html>
+
 
 
 
