@@ -226,12 +226,14 @@
     function renderAll() { ['blue', 'red'].forEach(team => { renderRoster(team); const selectedId = gameState.selectedChar[team]; if (selectedId && gameState.characters[team].some(c => c.id === selectedId)) { displayCharacterDetails(selectedId, team); } else if (gameState.characters[team].length > 0) { gameState.selectedChar[team] = gameState.characters[team][0].id; renderRoster(team); displayCharacterDetails(gameState.selectedChar[team], team); } else { document.getElementById(`active-panel-${team}`).innerHTML = `<div class="placeholder">請新增或選擇角色</div>`; } }); updateCombatPanel(); }
     function renderRoster(team) { const rosterContainer = document.getElementById(`roster-${team}`); rosterContainer.innerHTML = ''; gameState.characters[team].forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'roster-char'; if (gameState.selectedChar[team] === char.id) charDiv.classList.add('selected'); charDiv.onclick = () => { gameState.selectedChar[team] = char.id; renderAll(); }; const hpPercent = (char.currentHP / 100) * 100; let hpBarColor = `var(--hp-full-color)`; if (hpPercent < 70) hpBarColor = `var(--hp-mid-color)`; if (hpPercent < 30) hpBarColor = `var(--hp-low-color)`; charDiv.innerHTML = ` <div class="char-main-info"> <img src="${char.avatar}" class="roster-avatar"> <span>${char.name}</span> </div> <div class="hp-bar-container"><div class="hp-bar" style="width: ${hpPercent}%; background-color: ${hpBarColor};"></div></div> <button class="delete-char-btn" onclick="event.stopPropagation(); deleteCharacter('${char.id}', '${team}')">✕</button> `; rosterContainer.appendChild(charDiv); }); }
     function addCharacter(team, event) {
-    event.preventDefault();
+    event.preventDefault(); // <-- 就是這一行！它能神奇地阻止頁面重新整理。
+    
     const newChar = {
-        id: 'char_' + Date.now(),
+        id: 'char_' ' + Date.now(),
         name: document.getElementById('charName').value || '新兵',
         title: document.getElementById('charTitle').value || '無名小卒',
-        maxHP: 100, currentHP: 100,
+        maxHP: 100, 
+        currentHP: 100,
         stats: {
             mobility: parseInt(document.getElementById('charMobility').value) || 5,
             strength: parseInt(document.getElementById('charStrength').value) || 15,
@@ -240,12 +242,17 @@
         secondary_proficiency: document.getElementById('charSecondaryProf').value,
         breaching_proficiency: document.getElementById('charBreachingProf').value,
         special_proficiency: document.getElementById('charSpecialProf').value,
-        avatar: 'https://placehold.co/100x100?text=?', equipment: [], skills: []
+        avatar: 'https://placehold.co/100x100?text=?', 
+        equipment: [], 
+        skills: []
     };
+    
     gameState.characters[team].push(newChar);
     gameState.selectedChar[team] = newChar.id;
-    close(); saveData(); renderAll();
-}    
+    closeAddCharModal(); 
+    saveData(); 
+    renderAll();
+}
     function deleteCharacter(charId, team) { if (!confirm('確定要刪除此角色嗎？')) return; const index = gameState.characters[team].findIndex(c => c.id === charId); if (index > -1) { gameState.characters[team].splice(index, 1); if(gameState.selectedChar[team] === charId) gameState.selectedChar[team] = null; if(gameState.combatants[team] === charId) gameState.combatants[team] = null; saveData(); renderAll(); } }
     function displayCharacterDetails(charId, team) {
     const char = gameState.characters[team].find(c => c.id === charId);
@@ -337,6 +344,7 @@
     </script>
 </body>
 </html>
+
 
 
 
