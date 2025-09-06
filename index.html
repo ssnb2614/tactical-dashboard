@@ -94,6 +94,15 @@
         .proficiency-row .value {
             font-size: 1.8em; /* 讓第二行的字小一點，以示區別 */
         }
+        .passive-skill-section {
+            margin-top: 15px; /* 與上方區塊的間距 */
+        }
+        .passive-skill-box {
+            background: var(--bg-dark);
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -179,14 +188,15 @@
             charRows.forEach((row, index) => {
                 if (!row.trim()) return;
                 const cols = row.trim().split(',');
-                if (cols.length < 9) throw new Error(`第 ${index + 2} 行欄位數不足 (應為9，實際為${cols.length})`);
+                if (cols.length < 10) throw new Error(`第 ${index + 2} 行欄位數不足 (應為10，實際為${cols.length})`);
                 const t = { 
                     id: cols[0], name: cols[1], title: cols[2], 
                     stats: { mobility: parseInt(cols[3]), strength: parseInt(cols[4]) }, 
                     primary_proficiency: cols[5], 
                     secondary_proficiency: cols[6],
                     breaching_proficiency: cols[7],
-                    special_proficiency: cols[8].trim()
+                    special_proficiency: cols[8],
+                    passive_skill_id: cols[9].trim()
                 };
                 characterTemplateDB[t.id] = t;
             });
@@ -226,7 +236,7 @@
     function renderAll() { ['blue', 'red'].forEach(team => { renderRoster(team); const selectedId = gameState.selectedChar[team]; if (selectedId && gameState.characters[team].some(c => c.id === selectedId)) { displayCharacterDetails(selectedId, team); } else if (gameState.characters[team].length > 0) { gameState.selectedChar[team] = gameState.characters[team][0].id; renderRoster(team); displayCharacterDetails(gameState.selectedChar[team], team); } else { document.getElementById(`active-panel-${team}`).innerHTML = `<div class="placeholder">請新增或選擇角色</div>`; } }); updateCombatPanel(); }
     function renderRoster(team) { const rosterContainer = document.getElementById(`roster-${team}`); rosterContainer.innerHTML = ''; gameState.characters[team].forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'roster-char'; if (gameState.selectedChar[team] === char.id) charDiv.classList.add('selected'); charDiv.onclick = () => { gameState.selectedChar[team] = char.id; renderAll(); }; const hpPercent = (char.currentHP / 100) * 100; let hpBarColor = `var(--hp-full-color)`; if (hpPercent < 70) hpBarColor = `var(--hp-mid-color)`; if (hpPercent < 30) hpBarColor = `var(--hp-low-color)`; charDiv.innerHTML = ` <div class="char-main-info"> <img src="${char.avatar}" class="roster-avatar"> <span>${char.name}</span> </div> <div class="hp-bar-container"><div class="hp-bar" style="width: ${hpPercent}%; background-color: ${hpBarColor};"></div></div> <button class="delete-char-btn" onclick="event.stopPropagation(); deleteCharacter('${char.id}', '${team}')">✕</button> `; rosterContainer.appendChild(charDiv); }); }
     function addCharacter(team, event) {
-    event.preventDefault(); // <-- 就是這一行！它能神奇地阻止頁面重新整理。
+    event.preventDefault();
     
     const newChar = {
         id: 'char_' + Date.now(),
@@ -242,9 +252,10 @@
         secondary_proficiency: document.getElementById('charSecondaryProf').value,
         breaching_proficiency: document.getElementById('charBreachingProf').value,
         special_proficiency: document.getElementById('charSpecialProf').value,
+        passive_skill_id: template ? template.passive_skill_id : null, 
         avatar: 'https://placehold.co/100x100?text=?', 
         equipment: [], 
-        skills: []
+        skills: [] 
     };
     
     gameState.characters[team].push(newChar);
@@ -262,36 +273,52 @@
     let totalWeight = 0;
     char.equipment.forEach(itemId => { const item = WEAPON_DB[itemId] || GEAR_DB[itemId]; if (item) totalWeight += item.weight; });
     
+    const activeSkillOptions = Object.keys(SKILL_DB)
+        .filter(id => SKILL_DB[id].type === 'active')
+        .map(id => `<option value="${id}">${SKILL_DB[id].name}</option>`).join('');
+
     const weaponOptions = Object.keys(WEAPON_DB).map(id => `<option value="${id}">${WEAPON_DB[id].name}</option>`).join('');
     const gearOptions = Object.keys(GEAR_DB).map(id => `<option value="${id}">${GEAR_DB[id].name}</option>`).join('');
-    const skillOptions = Object.keys(SKILL_DB).map(id => `<option value="${id}">${SKILL_DB[id].name}</option>`).join('');
-    
+
+    const passiveSkill = SKILL_DB[char.passive_skill_id];
+    let passiveSkillHTML = `<h4>固有被動技能 (Passive)</h4><div class="passive-skill-box">無</div>`;
+    if (passiveSkill) {
+        passiveSkillHTML = `
+            <h4>固有被動技能 (Passive)</h4>
+            <div class="passive-skill-box">
+                <strong>${passiveSkill.name}</strong>
+                <br>
+                <small style="color: var(--text-secondary);">${passiveSkill.desc}</small>
+            </div>
+        `;
+    }
+
     panel.innerHTML = `
         <div class="card-layout">
             <div class="card-header">
-                <img src="${char.avatar}" class="card-avatar" id="avatar-${team}-${charId}">
-                <div class="card-name-title">
-                    <input type="text" value="${char.name}" onchange="updateCharValue('${char.id}', '${team}', 'name', this.value)">
-                    <input type="text" class="title" value="${char.title}" onchange="updateCharValue('${char.id}', '${team}', 'title', this.value)">
-                    <label class="avatar-upload-label">更換頭像 <input type="file" onchange="handleAvatarUpload(event, '${char.id}', '${team}')" accept="image/*" style="display:none;"></label>
-                </div>
+                <img src="${char.avatar}" class="card-avatar" id="avatar-${team}-${charId}"><div class="card-name-title"><input type="text" value="${char.name}" onchange="updateCharValue('${char.id}', '${team}', 'name', this.value)"><input type="text" class="title" value="${char.title}" onchange="updateCharValue('${char.id}', '${team}', 'title', this.value)"><label class="avatar-upload-label">更換頭像 <input type="file" onchange="handleAvatarUpload(event, '${char.id}', '${team}')" accept="image/*" style="display:none;"></label></div>
             </div>
             <div class="card-stats">
-                <div class="stat-row">
-                    <div class="stat-box"> <label>HP</label> <div class="value"><input type="number" value="${char.currentHP}" onchange="updateCharValue('${char.id}', '${team}', 'currentHP', this.value)"></div> </div>
-                    <div class="stat-box"> <label>MOVE</label> <div class="value">${char.stats.mobility}</div> </div>
-                    <div class="stat-box"> <label>STRENGTH</label> <div class="value">${char.stats.strength}</div> </div>
-                    <div class="stat-box"> <label>WEIGHT</label> <div class="value">${totalWeight}</div> </div>
-                </div>
-                <div class="stat-row proficiency-row">
-                    <div class="stat-box"> <label>PRIMARY</label> <div class="value">${char.primary_proficiency}</div> </div>
-                    <div class="stat-box"> <label>SECONDARY</label> <div class="value">${char.secondary_proficiency}</div> </div>
-                    <div class="stat-box"> <label>BREACHING</label> <div class="value">${char.breaching_proficiency}</div> </div>
-                    <div class="stat-box"> <label>SPECIAL</label> <div class="value">${char.special_proficiency}</div> </div>
-                </div>
+                <div class="stat-row"><div class="stat-box"> <label>HP</label> <div class="value"><input type="number" value="${char.currentHP}" onchange="updateCharValue('${char.id}', '${team}', 'currentHP', this.value)"></div> </div><div class="stat-box"> <label>MOVE</label> <div class="value">${char.stats.mobility}</div> </div><div class="stat-box"> <label>STRENGTH</label> <div class="value">${char.stats.strength}</div> </div><div class="stat-box"> <label>WEIGHT</label> <div class="value">${totalWeight}</div> </div></div>
+                <div class="stat-row proficiency-row"><div class="stat-box"> <label>PRIMARY</label> <div class="value">${char.primary_proficiency}</div> </div><div class="stat-box"> <label>SECONDARY</label> <div class="value">${char.secondary_proficiency}</div> </div><div class="stat-box"> <label>BREACHING</label> <div class="value">${char.breaching_proficiency}</div> </div><div class="stat-box"> <label>SPECIAL</label> <div class="value">${char.special_proficiency}</div> </div></div>
             </div>
             <div class="card-body">
+                <div class="card-section">
+                    <h4>裝備 (Equipment)</h4>
+                    <ul class="item-list">${char.equipment.map(id => { const item = WEAPON_DB[id] || GEAR_DB[id]; if(!item) return ''; return `<li><div><strong>${item.name}</strong> (+${item.weight} WU)${formatEffects(item)}</div><span class="item-remove-btn" onclick="removeItem('${char.id}','${team}','equipment','${id}')">✕</span></li>`; }).join('')}</ul> <div class="db-selection"> <select id="equip-select-${team}"><optgroup label="武器">${weaponOptions}</optgroup><optgroup label="配件">${gearOptions}</optgroup></select> <button onclick="addItem('${char.id}','${team}','equipment','equip-select-${team}')">添加</button> </div>
                 </div>
+                <div class="card-section">
+                    <h4>主動技能 (Active)</h4>
+                    <ul class="item-list">${char.skills.map(id => { const skill = SKILL_DB[id]; if(!skill) return ''; return `<li><div><strong>${skill.name}</strong><br><small style="color: var(--text-secondary);">${skill.desc}</small></div><span class="item-remove-btn" onclick="removeItem('${char.id}','${team}','skills','${id}')">✕</span></li>`; }).join('')}</ul>
+                    <div class="db-selection">
+                        <select id="skill-select-${team}">${activeSkillOptions}</select>
+                        <button onclick="addItem('${char.id}','${team}','skills','skill-select-${team}')">添加</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-section passive-skill-section">
+                ${passiveSkillHTML}
+            </div>
             <div style="text-align: center; margin-top: auto;"><button class="add-char-btn" onclick="selectCombatant('${char.id}', '${team}')">選為戰鬥單位</button></div>
         </div>
     `;
@@ -344,6 +371,7 @@
     </script>
 </body>
 </html>
+
 
 
 
