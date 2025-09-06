@@ -108,7 +108,12 @@
         <div class="panel roster-panel team-red"><div class="roster-header"><h3>紅方人員列表</h3><div><button class="add-char-btn" onclick="openAddCharModal('red')">新增</button><button class="clear-data-btn" onclick="clearTeamData('red')">清除紅方</button></div></div><div id="roster-red"></div></div>
     </div>
     <div id="addCharModal" class="modal">
-        <div class="modal-content"><form id="addCharForm"><h3 id="modalTitle">新增角色</h3><div class="form-group"><label for="charName">名稱 (可輸入範本名稱自動帶入)</label><input type="text" id="charName" placeholder="例如：王小明"></div><div class="form-group"><label for="charTitle">稱號</label><input type="text" id="charTitle" placeholder="例如：路人甲"></div><div class="form-grid">
+        <div class="modal-content"><form id="addCharForm"><h3 id="modalTitle">新增角色</h3>
+<div class="form-group">
+    <label for="charIdTemplate">資料庫ID (選填，可自動帶入資訊)</label>
+    <input type="text" id="charIdTemplate" placeholder="例如：spec_ops_01">
+</div>
+            <div class="form-group"><label for="charName">角色名稱</label><input type="text" id="charName" placeholder="例如：王小明"></div><div class="form-group"><label for="charTitle">稱號</label><input type="text" id="charTitle" placeholder="例如：路人甲"></div><div class="form-grid">
     <div class="form-group"><label for="charMobility">機動 (MOVE)</label><input type="number" id="charMobility" value="5"></div>
     <div class="form-group"><label for="charStrength">肌力 (STR)</label><input type="number" id="charStrength" value="15"></div>
     <div class="form-group"><label for="charPrimaryProf">主武器熟稔</label>
@@ -132,7 +137,7 @@
         </select>
     </div>
 </div>
-    <div class="modal-buttons"><button type="button" class="cancel" onclick="closeAddCharModal()">取消</button><button type="submit" class="save" id="saveCharBtn">儲存</button></div></form></div>
+    <div class="modal-buttons"><button type="button" class="cancel" onclick="close()">取消</button><button type="submit" class="save" id="saveCharBtn">儲存</button></div></form></div>
     </div>
 
     <script>
@@ -183,7 +188,7 @@
                     breaching_proficiency: cols[7],
                     special_proficiency: cols[8].trim()
                 };
-                characterTemplateDB[t.name] = t;
+                characterTemplateDB[t.id] = t;
             });
             WEAPON_DB = {};
             weaponCsv.split('\n').slice(1).forEach(row => {
@@ -239,7 +244,7 @@
     };
     gameState.characters[team].push(newChar);
     gameState.selectedChar[team] = newChar.id;
-    closeAddCharModal(); saveData(); renderAll();
+    close(); saveData(); renderAll();
 }    
     function deleteCharacter(charId, team) { if (!confirm('確定要刪除此角色嗎？')) return; const index = gameState.characters[team].findIndex(c => c.id === charId); if (index > -1) { gameState.characters[team].splice(index, 1); if(gameState.selectedChar[team] === charId) gameState.selectedChar[team] = null; if(gameState.combatants[team] === charId) gameState.combatants[team] = null; saveData(); renderAll(); } }
     function displayCharacterDetails(charId, team) {
@@ -288,7 +293,35 @@
     function updateCharValue(charId, team, key, value) { const char = gameState.characters[team].find(c => c.id === charId); if (!char) return; const keys = key.split('.'); let obj = char; for (let i = 0; i < keys.length - 1; i++) { obj = obj[keys[i]]; } let finalValue = typeof obj[keys[keys.length - 1]] === 'number' ? parseInt(value) : value; obj[keys[keys.length - 1]] = finalValue; if (key === 'currentHP') { if (char.currentHP > 100) char.currentHP = 100; if (char.currentHP < 0) char.currentHP = 0; } saveData(); renderAll(); }
     function addItem(charId, team, itemType, selectId) { const char = gameState.characters[team].find(c => c.id === charId); const select = document.getElementById(selectId); const itemId = select.value; if(char && !char[itemType].includes(itemId)) { char[itemType].push(itemId); saveData(); renderAll(); } }
     function removeItem(charId, team, itemType, itemId) { const char = gameState.characters[team].find(c => c.id === charId); if (char) { const index = char[itemType].indexOf(itemId); if (index > -1) { char[itemType].splice(index, 1); saveData(); renderAll(); } } }
-    function openAddCharModal(team) { const modal = document.getElementById('addCharModal'); const form = document.getElementById('addCharForm'); form.reset(); modal.style.display = 'flex'; document.getElementById('modalTitle').textContent = `新增 ${team === 'blue' ? '藍方' : '紅方'} 角色`; const nameInput = document.getElementById('charName'); nameInput.onblur = () => { const template = characterTemplateDB[nameInput.value]; if (template) { document.getElementById('charTitle').value = template.title; document.getElementById('charMobility').value = template.stats.mobility; document.getElementById('charStrength').value = template.stats.strength; document.getElementById('charPrimaryProf').value = template.primary_proficiency; document.getElementById('charSecondaryProf').value = template.secondary_proficiency; } }; form.onsubmit = (event) => addCharacter(team, event); }
+    function openAddCharModal(team) {
+    const modal = document.getElementById('addCharModal');
+    const form = document.getElementById('addCharForm');
+    form.reset();
+    modal.style.display = 'flex';
+    document.getElementById('modalTitle').textContent = `新增 ${team === 'blue' ? '藍方' : '紅方'} 角色`;
+
+    const idInput = document.getElementById('charIdTemplate');
+    
+    // 當 ID 輸入框失去焦點時觸發
+    idInput.onblur = () => {
+        const enteredId = idInput.value;
+        const template = characterTemplateDB[enteredId];
+        
+        if (template) {
+            // 如果在資料庫中找到該角色，自動填入所有相關欄位
+            document.getElementById('charName').value = template.name;
+            document.getElementById('charTitle').value = template.title;
+            document.getElementById('charMobility').value = template.stats.mobility;
+            document.getElementById('charStrength').value = template.stats.strength;
+            document.getElementById('charPrimaryProf').value = template.primary_proficiency;
+            document.getElementById('charSecondaryProf').value = template.secondary_proficiency;
+            document.getElementById('charBreachingProf').value = template.breaching_proficiency;
+            document.getElementById('charSpecialProf').value = template.special_proficiency;
+        }
+    };
+    
+    form.onsubmit = (event) => addCharacter(team, event);
+}
     function closeAddCharModal() { document.getElementById('addCharModal').style.display = 'none'; }
     function formatEffects(item) { if (!item.effects || item.effects.length === 0) return ''; const effectStrings = item.effects.map(effect => { if (effect.stat) { let statName = effect.stat; if (statName === 'maxHP') statName = '最大HP'; if (statName === 'mobility') statName = '機動'; if (statName === 'strength_calculation') statName = '肌力(計算用)'; if (statName === 'accuracy_short') statName = '近距離命中'; if (statName === 'crit_chance') statName = '暴擊率'; if (statName === 'crit_damage') statName = '暴擊傷害'; return `${statName} ${effect.modifier}${effect.value}`; } if (effect.effect === 'apply_status') { return `有 ${effect.chance * 100}% 機率附加【${effect.status}】狀態`; } return '特殊效果'; }); return `<br><small style="color: var(--text-secondary);">效果: ${effectStrings.join(' / ')}</small>`; }
     function selectCombatant(charId, team) { const char = gameState.characters[team].find(c => c.id === charId); if (char) { gameState.combatants[team] = charId; updateCombatPanel(); } }
@@ -304,6 +337,7 @@
     </script>
 </body>
 </html>
+
 
 
 
