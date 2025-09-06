@@ -237,7 +237,9 @@
     function renderRoster(team) { const rosterContainer = document.getElementById(`roster-${team}`); rosterContainer.innerHTML = ''; gameState.characters[team].forEach(char => { const charDiv = document.createElement('div'); charDiv.className = 'roster-char'; if (gameState.selectedChar[team] === char.id) charDiv.classList.add('selected'); charDiv.onclick = () => { gameState.selectedChar[team] = char.id; renderAll(); }; const hpPercent = (char.currentHP / 100) * 100; let hpBarColor = `var(--hp-full-color)`; if (hpPercent < 70) hpBarColor = `var(--hp-mid-color)`; if (hpPercent < 30) hpBarColor = `var(--hp-low-color)`; charDiv.innerHTML = ` <div class="char-main-info"> <img src="${char.avatar}" class="roster-avatar"> <span>${char.name}</span> </div> <div class="hp-bar-container"><div class="hp-bar" style="width: ${hpPercent}%; background-color: ${hpBarColor};"></div></div> <button class="delete-char-btn" onclick="event.stopPropagation(); deleteCharacter('${char.id}', '${team}')">✕</button> `; rosterContainer.appendChild(charDiv); }); }
     function addCharacter(team, event) {
     event.preventDefault();
-    
+    const templateId = document.getElementById('charIdTemplate').value;
+    const template = characterTemplateDB[templateId]; 
+        
     const newChar = {
         id: 'char_' + Date.now(),
         name: document.getElementById('charName').value || '新兵',
@@ -281,7 +283,7 @@
     const gearOptions = Object.keys(GEAR_DB).map(id => `<option value="${id}">${GEAR_DB[id].name}</option>`).join('');
 
     const passiveSkill = SKILL_DB[char.passive_skill_id];
-    let passiveSkillHTML = `<h4>固有被動技能 (Passive)</h4><div class="passive-skill-box">無</div>`;
+    let passiveSkillHTML = `<h4>固有被動技能 (Passive)</h4><div class="passive-skill-box">無能之輩</div>`;
     if (passiveSkill) {
         passiveSkillHTML = `
             <h4>固有被動技能 (Passive)</h4>
@@ -371,6 +373,7 @@
     </script>
 </body>
 </html>
+
 
 
 
