@@ -126,6 +126,40 @@
           background-color: var(--text-secondary);
           cursor: not-allowed;
       }
+        .combat-select {
+          padding: 8px;
+          width: 150px;
+          margin: auto;
+          background-color: var(--bg-dark);
+          border: 1px solid var(--text-secondary);
+          color: var(--text-light);
+          border-radius: 5px;
+      }
+/* --- 動畫效果 --- */
+         @keyframes flash-red {
+             0%, 100% { box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+             50% { box-shadow: 0 0 30px var(--hp-low-color), 0 0 15px var(--hp-low-color) inset; }
+         }
+
+         @keyframes shatter {
+             0% { transform: scale(1); opacity: 1; }
+             50% { transform: scale(1.05) rotate(1deg); opacity: 0.5; }
+             100% { transform: scale(1); opacity: 1; }
+         }
+
+         @keyframes defeated-fade {
+             to { filter: grayscale(1) opacity(0.6); }
+         }
+
+         .critical-hit-animation {
+             animation: flash-red 0.6s ease-in-out;
+         }
+         .armor-break-animation {
+             animation: shatter 0.5s ease-in-out;
+         }
+         .defeated-animation {
+             animation: defeated-fade 0.5s ease forwards;
+         }
     </style>
 </head>
 <body>
@@ -135,7 +169,59 @@
     <div class="dashboard">
         <div class="panel roster-panel team-blue"><div class="roster-header"><h3>藍方人員列表</h3><div><button class="add-char-btn" onclick="openAddCharModal('blue')">新增</button><button class="clear-data-btn" onclick="clearTeamData('blue')">清除藍方</button></div></div><div id="roster-blue"></div></div>
         <div class="panel active-character-panel team-blue" id="active-panel-blue"><div class="placeholder">請新增或選擇角色</div></div>
-        <div class="panel combat-panel" id="combat-panel"><h2 class="combat-header">交戰模擬</h2><div class="combatants"><div class="combatant"><img id="combatant-avatar-blue" src="https://placehold.co/80x80?text=?" class="combatant-avatar"><h3 id="combatant-name-blue">選擇藍方</h3></div><div> VS </div><div class="combatant"><img id="combatant-avatar-red" src="https://placehold.co/80x80?text=?" class="combatant-avatar"><h3 id="combatant-name-red">選擇紅方</h3></div></div><div class="combat-options" style="margin-bottom: 20px;"><div class="form-group" style="margin-bottom:10px;"><label for="attack-angle">攻擊角度</label><select id="attack-angle" style="padding: 8px; width: 150px; margin:auto;"><option value="front">前方</option><option value="side">側面</option><option value="rear">後方</option></select></div></div><button id="battle-btn" onclick="simulateCombat()">開始戰鬥</button><div id="combat-log" style="margin-top: 20px; text-align: left; background: var(--bg-dark); padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;"><strong>戰鬥記錄:</strong></div></div>
+        <div class="panel combat-panel" id="combat-panel">
+    <h2 class="combat-header">交戰模擬</h2>
+    <div class="combatants">
+        <div class="combatant">
+            <img id="combatant-avatar-blue" src="https://placehold.co/80x80?text=?" class="combatant-avatar">
+            <h3 id="combatant-name-blue">選擇藍方</h3>
+            <div class="form-group" style="margin-top: 5px;">
+                <select id="cover-blue" class="combat-select">
+                    <option value="none">無掩體</option>
+                    <option value="half">半身掩體</option>
+                    <option value="full">全身掩體</option>
+                </select>
+            </div>
+        </div>
+        <div> VS </div>
+        <div class="combatant">
+            <img id="combatant-avatar-red" src="https://placehold.co/80x80?text=?" class="combatant-avatar">
+            <h3 id="combatant-name-red">選擇紅方</h3>
+            <div class="form-group" style="margin-top: 5px;">
+                <select id="cover-red" class="combat-select">
+                    <option value="none">無掩體</option>
+                    <option value="half">半身掩體</option>
+                    <option value="full">全身掩體</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="combat-options" style="margin-bottom: 20px;">
+        <div class="form-group" style="margin-bottom:10px;">
+            <label for="distance">交戰距離</label>
+            <select id="distance" class="combat-select">
+                <option value="short">近距離 (1-5格)</option>
+                <option value="mid" selected>中距離 (6-10格)</option>
+                <option value="long">長距離 (>10格)</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom:10px;">
+            <label for="attack-angle">攻擊角度</label>
+            <select id="attack-angle" class="combat-select">
+                <option value="front">前方</option>
+                <option value="side">側面</option>
+                <option value="rear">後方</option>
+            </select>
+        </div>
+    </div>
+
+    <button id="battle-btn" onclick="simulateCombat()">開始戰鬥</button>
+
+    <div id="combat-log" style="margin-top: 20px; text-align: left; background: var(--bg-dark); padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto;">
+        <strong>戰鬥記錄:</strong>
+    </div>
+</div>
         <div class="panel active-character-panel team-red" id="active-panel-red"><div class="placeholder">請新增或選擇角色</div></div>
         <div class="panel roster-panel team-red"><div class="roster-header"><h3>紅方人員列表</h3><div><button class="add-char-btn" onclick="openAddCharModal('red')">新增</button><button class="clear-data-btn" onclick="clearTeamData('red')">清除紅方</button></div></div><div id="roster-red"></div></div>
     </div>
@@ -473,6 +559,15 @@
     form.onsubmit = (event) => addCharacter(team, event);
 }
     function closeAddCharModal() { document.getElementById('addCharModal').style.display = 'none'; }
+    function triggerAnimation(elementId, animationClass) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.classList.add(animationClass);
+        setTimeout(() => {
+            element.classList.remove(animationClass);
+        }, 600); // 動畫持續 0.6 秒後移除 class
+    }
+}
     function formatEffects(item) { if (!item.effects || item.effects.length === 0) return ''; const effectStrings = item.effects.map(effect => { if (effect.stat) { let statName = effect.stat; if (statName === 'maxHP') statName = '最大HP'; if (statName === 'mobility') statName = '機動'; if (statName === 'strength_calculation') statName = '肌力(計算用)'; if (statName === 'accuracy_short') statName = '近距離命中'; if (statName === 'crit_chance') statName = '暴擊率'; if (statName === 'crit_damage') statName = '暴擊傷害'; return `${statName} ${effect.modifier}${effect.value}`; } if (effect.effect === 'apply_status') { return `有 ${effect.chance * 100}% 機率附加【${effect.status}】狀態`; } return '特殊效果'; }); return `<br><small style="color: var(--text-secondary);">效果: ${effectStrings.join(' / ')}</small>`; }
     function selectCombatant(charId, team) { const char = gameState.characters[team].find(c => c.id === charId); if (char) { gameState.combatants[team] = charId; updateCombatPanel(); } }
     function updateCombatPanel() { const blueChar = gameState.characters['blue'].find(c => c.id === gameState.combatants['blue']); const redChar = gameState.characters['red'].find(c => c.id === gameState.combatants['red']); document.getElementById('combatant-name-blue').textContent = blueChar ? blueChar.name : '選擇藍方'; document.getElementById('combatant-avatar-blue').src = blueChar ? blueChar.avatar : 'https://placehold.co/80x80?text=?'; document.getElementById('combatant-name-red').textContent = redChar ? redChar.name : '選擇紅方'; document.getElementById('combatant-avatar-red').src = redChar ? redChar.avatar : 'https://placehold.co/80x80?text=?'; }
@@ -500,46 +595,72 @@ function simulateCombat() {
 
     if (!blueChar || !redChar) { combatLog.innerHTML += `<p style="color:red;">請確保雙方都已選擇戰鬥單位！</p>`; return; }
     
-    const log = (message) => { combatLog.innerHTML += `<p>${message}</p>`; combatLog.scrollTop = combatLog.scrollHeight;};
-    log(`>>> ${blueChar.name} 對 ${redChar.name} 發動攻擊！`);
+    // --- 假設藍方攻擊紅方 ---
+    const attacker = blueChar;
+    const defender = redChar;
+    const attackerCardId = `active-panel-${'blue'}`;
+    const defenderCardId = `active-panel-${'red'}`;
 
-    const weapon = blueChar.equipment.map(id => WEAPON_DB[id]).find(item => item && item.type === 'primary');
-    if (!weapon) { log(`❌ ${blueChar.name} 沒有裝備主武器！`); return; }
+    const log = (message) => { combatLog.innerHTML += `<p>${message}</p>`; combatLog.scrollTop = combatLog.scrollHeight;};
+    log(`>>> ${attacker.name} 對 ${defender.name} 發動攻擊！`);
+
+    const weapon = attacker.equipment.map(id => WEAPON_DB[id]).find(item => item && item.type === 'primary');
+    if (!weapon) { log(`❌ ${attacker.name} 沒有裝備主武器！`); return; }
     
-    // ... (準備階段的程式碼不變) ...
+    // --- 準備階段 ---
     const proficiencyKey = weapon.type === 'primary' ? 'primary_proficiency' : 'secondary_proficiency';
-    const proficiencyLevel = blueChar[proficiencyKey] || 'E';
+    const proficiencyLevel = attacker[proficiencyKey] || 'E';
     const proficiencyMod = PROFICIENCY_MODIFIERS[proficiencyLevel] || 0.8;
-    let baseAccuracy = weapon.accuracy_mid; 
+    
+    // --- NEW: 根據距離選擇基礎命中率 ---
+    const distance = document.getElementById('distance').value; // short, mid, long
+    let baseAccuracy;
+    if (distance === 'short') {
+        baseAccuracy = weapon.accuracy_short;
+    } else if (distance === 'long') {
+        baseAccuracy = weapon.accuracy_long;
+    } else {
+        baseAccuracy = weapon.accuracy_mid;
+    }
+    log(`交戰距離: ${distance} -> 基礎命中率: ${baseAccuracy}%`);
+    // ---------------------------------
+
     let finalBaseDamage = weapon.base_damage * proficiencyMod;
     log(`武器熟稔度(${proficiencyLevel}): 效率 ${proficiencyMod * 100}%`);
-    let passiveBonuses = { accuracy: 0, damage: 0, crit_chance: 0, crit_damage: 0 }; 
-    blueChar.equipment.forEach(id => { const item = GEAR_DB[id]; if (item && item.effects) { item.effects.forEach(effect => { if(effect.stat && effect.stat.includes('accuracy')) { passiveBonuses.accuracy += effect.value; log(`⚡ 來自 [${item.name}] 的加成: 命中 +${effect.value}`); } }); } });
-    const finalBaseAccuracy = (baseAccuracy + passiveBonuses.accuracy) * proficiencyMod;
 
-    // --- 第 I 步：命中判定 (不變) ---
-    const finalHitChance = finalBaseAccuracy; 
+    let passiveBonuses = { accuracy: 0 }; 
+    attacker.equipment.forEach(id => { const item = GEAR_DB[id]; if (item && item.effects) { item.effects.forEach(effect => { if(effect.stat && effect.stat.includes('accuracy')) { passiveBonuses.accuracy += effect.value; log(`⚡ 來自 [${item.name}] 的加成: 命中 +${effect.value}`); } }); } });
+    
+    // --- 第 I 步：命中判定 (已升級) ---
+    let finalBaseAccuracy = (baseAccuracy + passiveBonuses.accuracy) * proficiencyMod;
+    
+    // --- NEW: 計算掩體修正 ---
+    const defenderCover = document.getElementById(`cover-${'red'}`).value; // red is the defender
+    let coverPenalty = 0;
+    if (defenderCover === 'half') {
+        coverPenalty = 30;
+        log(`🛡️ 防禦方處於半身掩體後，命中率 -${coverPenalty}%`);
+    } else if (defenderCover === 'full') {
+        coverPenalty = 60;
+        log(`🛡️ 防禦方處於全身掩體後，命中率 -${coverPenalty}%`);
+    }
+    // -------------------------
+
+    const finalHitChance = finalBaseAccuracy - coverPenalty; 
     const hitRoll = Math.floor(Math.random() * 100) + 1;
     log(`擲骰判定命中 (d100 <= ${finalHitChance.toFixed(0)})... 結果: ${hitRoll}`);
+
     if (hitRoll > finalHitChance) { log(`💥 MISS!! 攻擊失手！`); return; }
     log(`✔️ 初步命中！進入護甲判定...`);
 
-    // --- 第 II 步：護甲判定 (已完全重構) ---
+    // --- 第 II 步：護甲判定 (已升級) ---
     const attackAngle = document.getElementById('attack-angle').value;
     const coverageKey = `coverage_${attackAngle}`;
-    
-    let highestCoverage = 0;
-    let blockingArmorId = null;
-
-    // 找出防禦方身上，對應攻擊角度、且耐久>0 的、防禦率最高的裝備
-    redChar.equipment.forEach(id => {
+    let highestCoverage = 0, blockingArmorId = null;
+    defender.equipment.forEach(id => {
         const itemData = GEAR_DB[id];
-        // 必須是護甲/盾牌，且角色身上的這一件耐久度 > 0
-        if (itemData && (itemData.gear_type === 'armor' || itemData.gear_type === 'shield') && redChar.equipmentState[id] && redChar.equipmentState[id].durability > 0) {
-            if (itemData[coverageKey] > highestCoverage) {
-                highestCoverage = itemData[coverageKey];
-                blockingArmorId = id;
-            }
+        if (itemData && (itemData.gear_type === 'armor' || itemData.gear_type === 'shield') && defender.equipmentState[id] && defender.equipmentState[id].durability > 0) {
+            if (itemData[coverageKey] > highestCoverage) { highestCoverage = itemData[coverageKey]; blockingArmorId = id; }
         }
     });
 
@@ -547,42 +668,51 @@ function simulateCombat() {
         const blockRoll = Math.floor(Math.random() * 100) + 1;
         log(`防禦方 ${attackAngle} 方向有效防禦率為 ${highestCoverage}%`);
         log(`擲骰判定格擋 (d100 <= ${highestCoverage})... 結果: ${blockRoll}`);
-
         if (blockRoll <= highestCoverage) {
             const blockingArmorData = GEAR_DB[blockingArmorId];
             log(`🛡️ 被擋下了!! 攻擊被 ${blockingArmorData.name} 阻擋！`);
-            
-            // 扣除角色身上那件裝備的耐久度
-            redChar.equipmentState[blockingArmorId].durability--;
-            
-            const currentDurability = redChar.equipmentState[blockingArmorId].durability;
+            defender.equipmentState[blockingArmorId].durability--;
+            const currentDurability = defender.equipmentState[blockingArmorId].durability;
             log(`${blockingArmorData.name} 耐久度剩餘 ${currentDurability}`);
             if(currentDurability <= 0) {
-                log(`⚠️ ${blockingArmorData.name} 已被摧毀，失效！`);
+                log(`⚠️ ${blockingArmorData.name} 已破損，失去防護！`);
+                // --- NEW: 觸發護甲破壞動畫 ---
+                triggerAnimation(defenderCardId, 'armor-break-animation');
             }
-            saveData();
-            renderAll(); // 重新渲染以更新介面上的耐久度顯示
-            return; // 攻擊結束
+            saveData(); renderAll(); return;
         }
     }
     log(`🩸 攻擊穿透防禦或命中無護甲區域！`);
     
-    // --- 第 III, IV, V 步 (不變) ---
+    // --- 第 III 步：傷害計算 ---
     const variance = (Math.random() * 0.10) - 0.05;
     let damage = finalBaseDamage * (1 + variance);
-    log(`計算基礎傷害... ${finalBaseDamage.toFixed(1)} * (1 ${variance > 0 ? '+' : ''} ${variance.toFixed(2)}) = ${damage.toFixed(1)}`);
-    const critChance = 5 + passiveBonuses.crit_chance;
+    
+    // --- 第 IV 步：暴擊判定 (已升級) ---
+    const critChance = 5;
     const critRoll = Math.floor(Math.random() * 100) + 1;
     log(`擲骰判定暴擊 (d100 >= ${101 - critChance})... 結果: ${critRoll}`);
-    if (critRoll >= (101 - critChance)) { const critBonus = 0.05 + (passiveBonuses.crit_damage / 100); const extraDamage = damage * critBonus; damage += extraDamage; log(`💥 CRITICAL HIT!! 額外造成 ${extraDamage.toFixed(1)} 傷害！`); }
+    if (critRoll >= (101 - critChance)) {
+        const critBonus = 0.05; 
+        const extraDamage = damage * critBonus;
+        damage += extraDamage;
+        log(`💥 暴擊!! 額外造成 ${extraDamage.toFixed(1)} 傷害！`);
+        // --- NEW: 觸發暴擊動畫 ---
+        triggerAnimation(attackerCardId, 'critical-hit-animation');
+    }
+    
+    // --- 第 V 步：結算 (已升級) ---
     const finalDamage = Math.round(damage);
-    redChar.currentHP -= finalDamage;
-    if (redChar.currentHP < 0) redChar.currentHP = 0;
+    defender.currentHP -= finalDamage;
+    if (defender.currentHP < 0) defender.currentHP = 0;
     log(`造成最終傷害: ${finalDamage} 點！`);
-    log(`${redChar.name} 剩餘 HP: ${redChar.currentHP}/100`);
-    if (redChar.currentHP <= 0) log(`☠️ ${redChar.name} 已被擊敗！`);
-    saveData();
-    renderAll();
+    log(`${defender.name} 剩餘 HP: ${defender.currentHP}/100`);
+    if (defender.currentHP <= 0) {
+        log(`☠️ ${defender.name} 已被擊斃！`);
+        // --- NEW: 觸發擊敗動畫 ---
+        triggerAnimation(defenderCardId, 'defeated-animation');
+    }
+    saveData(); renderAll();
 }
         
     // --- Initialization ---
@@ -594,6 +724,7 @@ function simulateCombat() {
     </script>
 </body>
 </html>
+
 
 
 
