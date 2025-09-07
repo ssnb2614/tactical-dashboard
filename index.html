@@ -111,7 +111,7 @@
         .skill-actions {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
           flex-shrink: 0; /* 防止按鈕被壓縮 */
       }
         .skill-use-btn {
@@ -318,12 +318,14 @@
         passiveSkillHTML = `
             <h4>固有被動技能 (Passive)</h4>
             <div class="passive-skill-box">
-                <strong>${passiveSkill.name}</strong>
-                <br>
+                <strong>${passiveSkill.name}</strong><br>
                 <small style="color: var(--text-secondary);">${passiveSkill.desc}</small>
             </div>
         `;
     }
+    
+    // 【新增】檢查主動技能數量是否已達上限
+    const isSkillSlotFull = char.skills.length >= 2;
 
     panel.innerHTML = `
         <div class="card-layout">
@@ -363,13 +365,14 @@
                                     <div class="skill-actions">
                                         <span class="skill-uses">(${remainingUses}/${skill.uses})</span>
                                         <button class="skill-use-btn" onclick="activateSkill('${char.id}', '${team}', '${id}')" ${buttonDisabled}>使用</button>
+                                        <span class="item-remove-btn" onclick="removeItem('${char.id}','${team}','skills','${id}')">✕</span>
                                     </div>
                                 </li>`;
                         }).join('')}
                     </ul>
                     <div class="db-selection">
-                        <select id="skill-select-${team}">${activeSkillOptions}</select>
-                        <button onclick="addItem('${char.id}','${team}','skills','skill-select-${team}')">添加</button>
+                        <select id="skill-select-${team}" ${isSkillSlotFull ? 'disabled' : ''}>${activeSkillOptions}</select>
+                        <button onclick="addItem('${char.id}','${team}','skills','skill-select-${team}')" ${isSkillSlotFull ? 'disabled' : ''}>添加</button>
                     </div>
                 </div>
             </div>
@@ -382,7 +385,24 @@
 }
     function handleAvatarUpload(event, charId, team) { const file = event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (e) => { const char = gameState.characters[team].find(c => c.id === charId); if (char) { char.avatar = e.target.result; saveData(); renderAll(); } }; reader.readAsDataURL(file); } }
     function updateCharValue(charId, team, key, value) { const char = gameState.characters[team].find(c => c.id === charId); if (!char) return; const keys = key.split('.'); let obj = char; for (let i = 0; i < keys.length - 1; i++) { obj = obj[keys[i]]; } let finalValue = typeof obj[keys[keys.length - 1]] === 'number' ? parseInt(value) : value; obj[keys[keys.length - 1]] = finalValue; if (key === 'currentHP') { if (char.currentHP > 100) char.currentHP = 100; if (char.currentHP < 0) char.currentHP = 0; } saveData(); renderAll(); }
-    function addItem(charId, team, itemType, selectId) { const char = gameState.characters[team].find(c => c.id === charId); const select = document.getElementById(selectId); const itemId = select.value; if(char && !char[itemType].includes(itemId)) { char[itemType].push(itemId); saveData(); renderAll(); } }
+    function addItem(charId, team, itemType, selectId) {
+    const char = gameState.characters[team].find(c => c.id === charId);
+    if (!char) return;
+
+    // 【新增】檢查技能數量上限
+    if (itemType === 'skills' && char.skills.length >= 2) {
+        alert('主動技能最多只能選擇兩個！');
+        return; // 中斷函式執行
+    }
+
+    const select = document.getElementById(selectId);
+    const itemId = select.value;
+    if (char && !char[itemType].includes(itemId)) {
+        char[itemType].push(itemId);
+        saveData();
+        renderAll();
+    }
+}
     function removeItem(charId, team, itemType, itemId) { const char = gameState.characters[team].find(c => c.id === charId); if (char) { const index = char[itemType].indexOf(itemId); if (index > -1) { char[itemType].splice(index, 1); saveData(); renderAll(); } } }
     function openAddCharModal(team) {
     const modal = document.getElementById('addCharModal');
@@ -444,6 +464,7 @@
     </script>
 </body>
 </html>
+
 
 
 
