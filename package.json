@@ -2,7 +2,7 @@
   "name": "cqb-simulator",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://ssnb2614.github.io/tactical-dashboard/",
+  "homepage": "https://ssnb2614.github.io/tactical-dashboard",
   "type": "module",
   "scripts": {
     "predeploy": "npm run build",
